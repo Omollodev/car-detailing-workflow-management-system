@@ -1,0 +1,29 @@
+"""
+URL patterns for customers app.
+"""
+
+from django.urls import path
+from . import views
+
+app_name = 'customers'
+
+urlpatterns = [
+    # Customers
+    path('', views.customer_list_view, name='list'),
+    path('create/', views.customer_create_view, name='create'),
+    path('<int:pk>/', views.customer_detail_view, name='detail'),
+    path('<int:pk>/edit/', views.customer_edit_view, name='edit'),
+    
+    # Vehicles
+    path('<int:customer_pk>/vehicles/add/', views.vehicle_create_view, name='vehicle_create'),
+    path('vehicles/<int:pk>/', views.vehicle_detail_view, name='vehicle_detail'),
+    path('vehicles/<int:pk>/edit/', views.vehicle_edit_view, name='vehicle_edit'),
+    
+    # Quick form
+    path('quick-add/', views.quick_customer_vehicle_view, name='quick_add'),
+    
+    # API
+    path('api/search/', views.api_customer_search, name='api_search'),
+    path('api/vehicles/search/', views.api_vehicle_search, name='api_vehicle_search'),
+    path('api/<int:customer_pk>/vehicles/', views.api_customer_vehicles, name='api_vehicles'),
+]

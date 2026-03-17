@@ -130,10 +130,13 @@ class Vehicle(models.Model):
     """
     
     class VehicleType(models.TextChoices):
+        SPORTS_CAR = 'sports_car', _('Sports Car')
         SEDAN = 'sedan', _('Sedan')
+        LUXURY_CAR = 'luxury_car', _('Luxury Car')
         SUV = 'suv', _('SUV')
         HATCHBACK = 'hatchback', _('Hatchback')
         PICKUP = 'pickup', _('Pickup/Truck')
+        ELECTRIC_CAR = 'electric_car', _('Electric Car')
         VAN = 'van', _('Van/Minibus')
         MOTORCYCLE = 'motorcycle', _('Motorcycle')
         OTHER = 'other', _('Other')

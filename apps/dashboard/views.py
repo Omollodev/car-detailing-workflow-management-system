@@ -5,7 +5,7 @@ Dashboard views for the main application interface.
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.db.models import Sum, Count, Avg
+from django.db.models import Sum, Count, Avg, Q
 from datetime import timedelta
 
 from apps.jobs.models import Job
@@ -152,7 +152,7 @@ def reports_view(request):
     
     # Top workers (by jobs completed)
     top_workers = WorkerProfile.objects.annotate(
-        jobs_count=Count('assigned_jobs', filter=models.Q(assigned_jobs__status='completed'))
+        jobs_count=Count('assigned_jobs', filter=Q(assigned_jobs__status='completed'))
     ).order_by('-jobs_count')[:5]
     
     # Top customers (by visits)
@@ -167,3 +167,4 @@ def reports_view(request):
     }
     
     return render(request, 'dashboard/reports.html', context)
+    

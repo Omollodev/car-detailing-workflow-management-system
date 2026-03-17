@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if vehicle %}Edit Vehicle{% else %}Add Vehicle{% endif %} - DetailFlow{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-3">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'customers:list' %}">Customers</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'customers:detail' customer.pk %}">{{ customer.name }}</a></li>
+                    <li class="breadcrumb-item active">{% if vehicle %}Edit Vehicle{% else %}Add Vehicle{% endif %}</li>
+                </ol>
+            </nav>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">{% if vehicle %}Edit Vehicle{% else %}Add Vehicle for {{ customer.name }}{% endif %}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.plate_number|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.vehicle_type|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.make|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.model|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.year|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.color|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.mileage|as_crispy_field }}
+                            </div>
+                            <div class="col-12">
+                                {{ form.notes|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'customers:detail' customer.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>{% if vehicle %}Update{% else %}Add{% endif %} Vehicle
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

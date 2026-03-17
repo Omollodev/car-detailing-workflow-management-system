@@ -1,10 +1,7 @@
 """
-WSGI config for config project.
+WSGI config for Car Detailing Workflow Management System.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/4.2/howto/deployment/wsgi/
 """
 
 import os

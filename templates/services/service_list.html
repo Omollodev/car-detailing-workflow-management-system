@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Services - DetailFlow{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Services</h1>
+        <a href="{% url 'services:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Add Service
+        </a>
+    </div>
+
+    <!-- Categories -->
+    {% for category, services in services_by_category.items %}
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">{{ category }}</h5>
+            <span class="badge bg-primary">{{ services|length }} service{{ services|length|pluralize }}</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Service Name</th>
+                        <th>Description</th>
+                        <th>Duration</th>
+                        <th class="text-end">Price (KES)</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for service in services %}
+                    <tr>
+                        <td>
+                            <div class="fw-medium">{{ service.name }}</div>
+                        </td>
+                        <td>
+                            <span class="text-muted">{{ service.description|truncatechars:60|default:"-" }}</span>
+                        </td>
+                        <td>{{ service.estimated_duration }} min</td>
+                        <td class="text-end fw-medium">{{ service.price|floatformat:0 }}</td>
+                        <td>
+                            <span class="badge {% if service.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                {% if service.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                        <td>
+            <a href="{% url 'services:edit' service.pk %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-tools fs-1 text-muted mb-3 d-block"></i>
+            <p class="text-muted mb-3">No services found.</p>
+            <a href="{% url 'services:create' %}" class="btn btn-primary">Add Your First Service</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

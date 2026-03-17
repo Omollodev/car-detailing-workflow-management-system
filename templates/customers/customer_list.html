@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Customers - DetailFlow{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Customers</h1>
+        <a href="{% url 'customers:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Add Customer
+        </a>
+    </div>
+
+    <!-- Search -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" name="q" class="form-control" placeholder="Search by name, phone, or email..." value="{{ request.GET.q }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-secondary w-100">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Cards -->
+    <div class="row">
+        {% for customer in customers %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="card-title mb-1">{{ customer.name }}</h5>
+                            <p class="text-muted mb-0"><i class="bi bi-telephone me-2"></i>{{ customer.phone }}</p>
+                        </div>
+                        <span class="badge {% if customer.is_vip %}bg-warning text-dark{% else %}bg-light text-dark{% endif %}">
+                            {% if customer.is_vip %}VIP{% else %}Regular{% endif %}
+                        </span>
+                    </div>
+                    {% if customer.email %}
+                    <p class="mb-2"><i class="bi bi-envelope me-2"></i>{{ customer.email }}</p>
+                    {% endif %}
+                    <div class="d-flex justify-content-between text-muted small mb-3">
+                        <span><i class="bi bi-car-front me-1"></i>{{ customer.vehicles.count }} vehicle{{ customer.vehicles.count|pluralize }}</span>
+                        <span><i class="bi bi-briefcase me-1"></i>{{ customer.jobs.count }} job{{ customer.jobs.count|pluralize }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <div class="d-flex gap-2">
+                    <a href="{% url 'customers:detail' customer.pk %}" class="btn btn-sm btn-outline-primary flex-grow-1">View</a>
+                    <a href="{% url 'customers:edit' customer.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-people fs-1 text-muted mb-3 d-block"></i>
+                    <p class="text-muted mb-3">No customers found.</p>
+                    <a href="{% url 'customers:create' %}" class="btn btn-primary">Add Your First Customer</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if customers.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if customers.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ customers.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a>
+            </li>
+            {% endif %}
+            {% for num in customers.paginator.page_range %}
+            <li class="page-item {% if customers.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            {% if customers.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ customers.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

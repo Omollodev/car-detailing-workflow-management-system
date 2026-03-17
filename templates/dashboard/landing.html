@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Safi Car Detailing - Workflow Management System{% endblock %}
+
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex flex-column">
+    <!-- Hero Section -->
+    <div class="py-5" style="background: linear-gradient(135deg, #3d4a5a 0%, #28aac3 100%);">
+        <div class="container">
+            <div class="row align-items-center py-5">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold mb-4">Safi Car Detailing</h1>
+                    <p class="lead mb-4">
+                        Professional car detailing workflow management system. 
+                        Track jobs, manage workers, and deliver exceptional service to your customers.
+                    </p>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-light btn-lg px-5">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                        Get Started
+                    </a>
+                </div>
+                <div class="col-lg-6 text-center mt-4 mt-lg-0">
+                    <img src="{% static 'imgs/car-wash.jpg' %}" alt="Car wash in Thika" class="img-fluid rounded shadow-lg" style="max-height: 360px; object-fit: cover;">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Features Section -->
+    <div class="py-5" style="background-color: #3d4a5a;">
+        <div class="container">
+            <h2 class="text-center mb-5 text-white">System Features</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-inline-block mb-3">
+                                <i class="bi bi-kanban text-primary fs-1"></i>
+                            </div>
+                            <h5>Kanban Dashboard</h5>
+                            <p class="text-muted">
+                                Visual workflow management with real-time status tracking across all job stages.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-3 d-inline-block mb-3">
+                                <i class="bi bi-check2-all text-success fs-1"></i>
+                            </div>
+                            <h5>Service Tracking</h5>
+                            <p class="text-muted">
+                                Never miss a promised service. Track basic and extra services with completion verification.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-3 d-inline-block mb-3">
+                                <i class="bi bi-bell text-warning fs-1"></i>
+                            </div>
+                            <h5>Smart Alerts</h5>
+                            <p class="text-muted">
+                                Automatic alerts for pending services and priority jobs requiring attention.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-auto">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="bi bi-car-front-fill me-2"></i>SAfi Car Detailing</h5>
+                    <p class="text-white-50 mb-0">
+                        Professional car detailing services in Thika, Kenya.
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">
+                        <i class="bi bi-telephone me-2"></i>+254 713 318 602
+                    </p>
+                    <p class="text-white-50 mb-0">
+                        Workflow Management System &copy; {% now "Y" %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+{% endblock %}

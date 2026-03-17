@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}My Jobs - DetailFlow{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">My Jobs</h1>
+            <p class="text-muted mb-0">
+                {{ worker.name }} &middot;
+                {% if worker.is_available %}<span class="text-success">Available</span>{% else %}<span class="text-warning">On Job</span>{% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-list-check me-2"></i>Active Jobs
+                </div>
+                <div class="card-body">
+                    {% if active_jobs %}
+                    <div class="list-group list-group-flush">
+                        {% for job in active_jobs %}
+                        <a href="{% url 'jobs:detail' job.pk %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <div>
+                                    <h5 class="mb-1">
+                                        Job #{{ job.id }} · {{ job.vehicle.plate_number }}
+                                    </h5>
+                                    <p class="mb-1">
+                                        {{ job.customer.name }} · {{ job.customer.phone }}
+                                    </p>
+                                    <small>
+                                        <span class="badge {{ job.status_badge_class }}">{{ job.get_status_display }}</span>
+                                        <span class="badge {{ job.priority_badge_class }}">{{ job.get_priority_display }}</span>
+                                        {% if job.need_alert %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-exclamation-triangle me-1"></i> Pending Extras
+                                            </span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <small class="text-muted text-end">
+                                    {{ job.created_at|naturaltime }}<br>
+                                    Est: {{ job.formatted_estimated_duration }}
+                                </small>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">You have no active jobs assigned.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <i class="bi bi-check-circle me-2"></i>Recently Completed
+                </div>
+                <div class="card-body">
+                    {% if completed_jobs %}
+                    <ul class="list-group list-group-flush">
+                        {% for job in completed_jobs %}
+                        <li class="list-group-item px-0">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="fw-medium">
+                                        Job #{{ job.id }} · {{ job.vehicle.plate_number }}
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ job.customer.name }} · Completed {{ job.completed_at|naturaltime }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-success mb-1">Completed</span><br>
+                                    <small class="text-muted">
+                                        {{ job.formatted_actual_duration }}
+                                    </small>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted mb-0">No completed jobs yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-person-badge me-2"></i>My Performance
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Jobs Completed:</strong> {{ worker.total_jobs_completed }}</p>
+                    <p class="mb-1"><strong>Avg Completion Time:</strong> {{ worker.average_completion_time }} min</p>
+                    <p class="mb-0"><strong>Rating:</strong> {{ worker.formatted_rating }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

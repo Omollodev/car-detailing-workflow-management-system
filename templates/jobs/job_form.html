@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title|default:"Create Job" }} - DetailFlow{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-3">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'jobs:list' %}">Jobs</a></li>
+                    <li class="breadcrumb-item active">New</li>
+                </ol>
+            </nav>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">{{ title|default:"Create New Job" }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="jobForm" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">Customer & Vehicle</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    {{ form.customer|as_crispy_field }}
+                                    <small class="text-muted">
+                                        <a href="{% url 'customers:create' %}?next={{ request.path }}" target="_blank" rel="noopener">
+                                            Add new customer
+                                        </a>
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.vehicle|as_crispy_field }}
+                                    <small class="text-muted">
+                                        <a href="#" id="addVehicleLink" class="d-none">Add new vehicle</a>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">Services</h5>
+                            <div class="row">
+                                <div class="col-12">
+                                    {{ form.services|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">Assignment & Priority</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    {{ form.assigned_worker|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.priority|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">Instructions</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    {{ form.special_instructions|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.internal_notes|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'jobs:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>Create Job
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const customerSelect = document.getElementById('customer-select');
+    const vehicleSelect = document.getElementById('vehicle-select');
+    const addVehicleLink = document.getElementById('addVehicleLink');
+
+    if (!customerSelect || !vehicleSelect) return;
+
+    function setVehicleOptions(vehicles) {
+        vehicleSelect.innerHTML = '<option value="">Select a vehicle...</option>';
+        vehicles.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = `${v.plate_number} · ${v.full_description}`;
+            vehicleSelect.appendChild(opt);
+        });
+    }
+
+    async function loadVehicles(customerId, preselectVehicleId) {
+        vehicleSelect.innerHTML = '<option value="">Loading...</option>';
+
+        if (!customerId) {
+            vehicleSelect.innerHTML = '<option value="">Select customer first...</option>';
+            addVehicleLink.classList.add('d-none');
+            return;
+        }
+
+        try {
+            const resp = await fetch(`/customers/api/${customerId}/vehicles/`);
+            const data = await resp.json();
+            setVehicleOptions(data.vehicles || []);
+            addVehicleLink.classList.remove('d-none');
+            addVehicleLink.href = `/customers/${customerId}/vehicles/add/?next=${encodeURIComponent(window.location.pathname)}`;
+            if (preselectVehicleId) {
+                vehicleSelect.value = preselectVehicleId;
+            }
+        } catch (e) {
+            vehicleSelect.innerHTML = '<option value="">Error loading vehicles</option>';
+            addVehicleLink.classList.add('d-none');
+        }
+    }
+
+    customerSelect.addEventListener('change', function() {
+        loadVehicles(this.value);
+    });
+
+    // If customer already selected (e.g. initial GET params), load vehicles on page load
+    const initialCustomer = customerSelect.value;
+    const initialVehicle = "{{ form.vehicle.value|default:'' }}";
+    if (initialCustomer) {
+        loadVehicles(initialCustomer, initialVehicle || null);
+    } else {
+        vehicleSelect.innerHTML = '<option value="">Select customer first...</option>';
+    }
+});
+</script>
+{% endblock %}

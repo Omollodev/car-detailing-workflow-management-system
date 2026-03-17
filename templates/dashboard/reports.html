@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Reports - Safi Car Detailing{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="h3 mb-0">Business Reports</h1>
+        <p class="text-muted">Performance insights and key metrics</p>
+    </div>
+</div>
+
+<!-- Weekly / Monthly Summary -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                Last 7 Days
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>Total Jobs:</strong> {{ week_stats.total|default:0 }}</p>
+                <p class="mb-1"><strong>Completed:</strong> {{ week_stats.completed|default:0 }}</p>
+                <p class="mb-1">
+                    <strong>Revenue:</strong>
+                    KES {{ week_stats.revenue|default:0|floatformat:0|intcomma }}
+                </p>
+                <p class="mb-0">
+                    <strong>Avg Duration:</strong>
+                    {{ week_stats.avg_duration|default:0|floatformat:0 }} min
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                Last 30 Days
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>Total Jobs:</strong> {{ month_stats.total|default:0 }}</p>
+                <p class="mb-1"><strong>Completed:</strong> {{ month_stats.completed|default:0 }}</p>
+                <p class="mb-0">
+                    <strong>Revenue:</strong>
+                    KES {{ month_stats.revenue|default:0|floatformat:0|intcomma }}
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-secondary text-white">
+                Top Insights
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <strong>Top Workers:</strong> {{ top_workers|length|default:0 }}
+                </p>
+                <p class="mb-0">
+                    <strong>Top Customers:</strong> {{ top_customers|length|default:0 }}
+                </p>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<!-- Daily Trend (Last 7 Days) -->
+<div class="card mb-4">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <span>Last 7 Days Trend</span>
+        </div>
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th class="text-center">Total Jobs</th>
+                    <th class="text-center">Completed</th>
+                    <th class="text-end">Revenue (KES)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for day in daily_stats %}
+                <tr>
+                    <td>{{ day.date|date:"D, M j" }}</td>
+                    <td class="text-center">{{ day.total }}</td>
+                    <td class="text-center">
+                        <span class="badge {% if day.completed %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ day.completed }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        KES {{ day.revenue|default:0|floatformat:0|intcomma }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">
+                        No data available yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+ </div>
+
+<!-- Top Workers & Customers -->
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-person-badge me-1"></i> Top Workers
+            </div>
+            <div class="card-body">
+                {% if top_workers %}
+                <div class="list-group list-group-flush">
+                    {% for worker in top_workers %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong>{{ worker.name }}</strong><br>
+                            <small class="text-muted">
+                                {{ worker.formatted_rating }} · {{ worker.jobs_count }} jobs
+                            </small>
+                        </div>
+                        <span class="badge bg-success">{{ worker.jobs_count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No worker performance data yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-people me-1"></i> Top Customers
+            </div>
+            <div class="card-body">
+                {% if top_customers %}
+                <div class="list-group list-group-flush">
+                    {% for customer in top_customers %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong>{{ customer.name }}</strong><br>
+                            <small class="text-muted">
+                                {{ customer.total_visits }} visits ·
+                                KES {{ customer.total_spent|default:0|floatformat:0|intcomma }}
+                            </small>
+                        </div>
+                        <span class="badge bg-primary">{{ customer.total_visits }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No customer history data yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -25,7 +25,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Application definition
 INSTALLED_APPS = [
-    'jazzmin'
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -63,7 +63,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -90,8 +90,12 @@ if os.getenv('DATABASE_URL'):
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('DATABASE_NAME', 'safi_car_detailing'),
+            'USER': os.getenv('DATABASE_USER', 'root'),
+            'PASSWORD': os.getenv('DATABASE_PASSWORD', 'kalisec.2026'),
+            'HOST': os.getenv('DATABASE_HOST', '127.0.0.1'),
+            'PORT': os.getenv('DATABASE_PORT', '3306'),
         }
     }
 
@@ -163,10 +167,10 @@ MESSAGE_TAGS = {
 AJAX_POLLING_INTERVAL = 30000  # 30 seconds
 
 # Business Configuration
-BUSINESS_NAME = os.getenv('BUSINESS_NAME', 'Thika Car Detailing')
-BUSINESS_PHONE = os.getenv('BUSINESS_PHONE', '+254 700 000 000')
-BUSINESS_EMAIL = os.getenv('BUSINESS_EMAIL', 'info@thikadetailing.co.ke')
-BUSINESS_ADDRESS = os.getenv('BUSINESS_ADDRESS', 'Thika, Kenya')
+BUSINESS_NAME = os.getenv('BUSINESS_NAME', 'Safi Car Detailing')
+BUSINESS_PHONE = os.getenv('BUSINESS_PHONE', '+254 713 318 602')
+BUSINESS_EMAIL = os.getenv('BUSINESS_EMAIL', 'info@saficar.com')
+BUSINESS_ADDRESS = os.getenv('BUSINESS_ADDRESS', 'Safi, Kenya')
 
 # Security settings for production
 if not DEBUG:
@@ -221,6 +225,44 @@ LOGGING = {
 
 # Create logs directory if it doesn't exist
 (BASE_DIR / 'logs').mkdir(exist_ok=True)
+
+# Jazzmin (Admin UI) - clearer app differentiation
+JAZZMIN_SETTINGS = {
+    "site_title": "DetailFlow Admin",
+    "site_header": "DetailFlow",
+    "site_brand": "DetailFlow",
+    "welcome_sign": "Welcome to DetailFlow Administration",
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "order_with_respect_to": [
+        "accounts",
+        "customers",
+        "jobs",
+        "services",
+        "workers",
+        "notifications",
+    ],
+    "icons": {
+        "accounts.User": "fas fa-user-shield",
+        "customers.Customer": "fas fa-users",
+        "customers.Vehicle": "fas fa-car",
+        "jobs.Job": "fas fa-clipboard-list",
+        "jobs.JobService": "fas fa-tasks",
+        "services.Service": "fas fa-concierge-bell",
+        "workers.WorkerProfile": "fas fa-user-hard-hat",
+        "notifications.Notification": "fas fa-bell",
+    },
+    "custom_links": {
+        "jobs": [
+            {
+                "name": "Dashboard",
+                "url": "dashboard:index",
+                "icon": "fas fa-chart-line",
+                "permissions": ["jobs.view_job"],
+            }
+        ]
+    },
+}
 
 
 

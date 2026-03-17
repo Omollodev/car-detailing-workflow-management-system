@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice - Job #{{ job.id }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+            padding: 40px;
+        }
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #333;
+        }
+        .company-info h1 {
+            font-size: 28px;
+            color: #2563eb;
+            margin-bottom: 5px;
+        }
+        .company-info p {
+            color: #666;
+        }
+        .invoice-info {
+            text-align: right;
+        }
+        .invoice-info h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .invoice-info .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            background: #22c55e;
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .details-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+        .details-box {
+            width: 48%;
+        }
+        .details-box h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        .details-box p {
+            margin-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            color: #666;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .totals-table {
+            width: 300px;
+            margin-left: auto;
+        }
+        .totals-table td {
+            padding: 8px 12px;
+        }
+        .totals-table .total-row {
+            font-size: 18px;
+            font-weight: bold;
+            border-top: 2px solid #333;
+        }
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            color: #666;
+        }
+        @media print {
+            body {
+                padding: 20px;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 10px 20px; background: #28aac3; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Print Invoice
+        </button>
+        <button onclick="window.close()" style="padding: 10px 20px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+            Close
+        </button>
+    </div>
+
+    <div class="invoice-header">
+        <div class="company-info">
+            <h1>DetailFlow</h1>
+            <p>Car Detailing Services</p>
+            <p>Thika, Kenya</p>
+            <p>Phone: +254 700 000 000</p>
+        </div>
+        <div class="invoice-info">
+            <h2>INVOICE</h2>
+            <p><strong>Invoice #:</strong> JOB-{{ job.id }}</p>
+            <p><strong>Date:</strong> {{ job.created_at|date:"F d, Y" }}</p>
+            {% if job.status == 'completed' %}
+            <span class="badge">PAID</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="details-section">
+        <div class="details-box">
+            <h3>Bill To</h3>
+            <p><strong>{{ job.customer.name }}</strong></p>
+            <p>{{ job.customer.phone }}</p>
+            {% if job.customer.email %}
+            <p>{{ job.customer.email }}</p>
+            {% endif %}
+            {% if job.customer.address %}
+            <p>{{ job.customer.address }}</p>
+            {% endif %}
+        </div>
+        <div class="details-box">
+            <h3>Vehicle Details</h3>
+            <p><strong>{{ job.vehicle.year }} {{ job.vehicle.make }} {{ job.vehicle.model }}</strong></p>
+            <p>Plate: {{ job.vehicle.plate_number }}</p>
+            {% if job.vehicle.color %}
+            <p>Color: {{ job.vehicle.color }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Service</th>
+                <th>Description</th>
+                <th class="text-right">Amount (KES)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for service in job.services.all %}
+            <tr>
+                <td>{{ service.name }}</td>
+                <td>{{ service.description|truncatechars:50|default:"-" }}</td>
+                <td class="text-right">{{ service.price|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="totals-table">
+        <tr>
+            <td>Subtotal</td>
+            <td class="text-right">KES {{ job.total_price|floatformat:2 }}</td>
+        </tr>
+        {% if job.discount %}
+        <tr>
+            <td>Discount</td>
+            <td class="text-right">- KES {{ job.discount|floatformat:2 }}</td>
+        </tr>
+        {% endif %}
+        <tr class="total-row">
+            <td>Total</td>
+            <td class="text-right">KES {{ job.final_price|floatformat:2 }}</td>
+        </tr>
+    </table>
+
+    {% if job.notes %}
+    <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+        <h4 style="margin-bottom: 10px;">Notes</h4>
+        <p>{{ job.notes }}</p>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>Thank you for choosing DetailFlow!</p>
+        <p style="margin-top: 10px;">For questions about this invoice, please contact us at +254 700 000 000</p>
+    </div>
+</body>
+</html>

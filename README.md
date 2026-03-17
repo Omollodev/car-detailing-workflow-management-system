@@ -16,7 +16,7 @@ A comprehensive Django-based workflow management system for car detailing busine
 ## Tech Stack
 
 - **Backend**: Django 5.0, Python 3.11+
-- **Database**: PostgreSQL
+- **Database**: MySQL
 - **Cache**: Redis
 - **Task Queue**: Celery
 - **Frontend**: Bootstrap 5, HTMX
@@ -27,7 +27,7 @@ A comprehensive Django-based workflow management system for car detailing busine
 ### Prerequisites
 
 - Python 3.11+
-- PostgreSQL
+- MySQL
 - Redis (optional, for caching/celery)
 
 ### Installation
@@ -156,7 +156,7 @@ coverage report
 
 ## Support
 
-For issues specific to the Thika, Kenya deployment, contact the development team.
+For issues specific to the Safi, Kenya deployment, contact the development team.
 
 ## License
 

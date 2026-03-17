@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}My Dashboard - Safi Car Detailing{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="h3 mb-0">My Dashboard</h1>
+        <p class="text-muted">{{ today|date:"l, F j, Y" }}</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 bg-primary bg-opacity-10 h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-primary bg-opacity-25 rounded-circle p-3">
+                            <i class="bi bi-list-check text-primary fs-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h2 class="mb-0">{{ my_jobs|length }}</h2>
+                        <small class="text-muted">Active Jobs</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 bg-success bg-opacity-10 h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-success bg-opacity-25 rounded-circle p-3">
+                            <i class="bi bi-check-circle text-success fs-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h2 class="mb-0">{{ user.worker_profile.total_jobs_completed|default:0 }}</h2>
+                        <small class="text-muted">Jobs Completed</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 bg-info bg-opacity-10 h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-info bg-opacity-25 rounded-circle p-3">
+                            <i class="bi bi-clock-history text-info fs-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h2 class="mb-0">
+                            {{ user.worker_profile.average_completion_time|default:0 }}
+                        </h2>
+                        <small class="text-muted">Avg Time (min)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 bg-warning bg-opacity-10 h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-warning bg-opacity-25 rounded-circle p-3">
+                            <i class="bi bi-star text-warning fs-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h2 class="mb-0">
+                            {% if user.worker_profile and user.worker_profile.total_ratings %}
+                                {{ user.worker_profile.rating|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </h2>
+                        <small class="text-muted">My Rating</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-list-check me-2"></i>My Active Jobs
+            </div>
+            <div class="card-body">
+                {% if my_jobs %}
+                <div class="list-group list-group-flush">
+                    {% for job in my_jobs %}
+                    <a href="{% url 'jobs:detail' job.pk %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <div>
+                                <h5 class="mb-1">
+                                    Job #{{ job.id }} · {{ job.vehicle.plate_number }}
+                                </h5>
+                                <p class="mb-1">
+                                    {{ job.customer.name }} · {{ job.customer.phone }}
+                                </p>
+                                <small>
+                                    <span class="badge {{ job.status_badge_class }}">{{ job.get_status_display }}</span>
+                                    <span class="badge {{ job.priority_badge_class }}">{{ job.get_priority_display }}</span>
+                                    {% if job.need_alert %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-exclamation-triangle me-1"></i> Pending Extras
+                                        </span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <small class="text-muted text-end">
+                                {{ job.created_at|naturaltime }}<br>
+                                Est: {{ job.formatted_estimated_duration }}
+                            </small>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">You have no active jobs assigned.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <i class="bi bi-person-circle me-2"></i>My Performance
+            </div>
+            <div class="card-body">
+                {% if user.worker_profile %}
+                <p class="mb-1"><strong>Jobs Completed:</strong> {{ user.worker_profile.total_jobs_completed }}</p>
+                <p class="mb-1"><strong>Avg Completion Time:</strong> {{ user.worker_profile.average_completion_time }} min</p>
+                <p class="mb-0"><strong>Rating:</strong> {{ user.worker_profile.formatted_rating }}</p>
+                {% else %}
+                <p class="text-muted mb-0">Worker profile not configured.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle me-2"></i>Alerts
+            </div>
+            <div class="card-body">
+                {% if alert_jobs %}
+                <ul class="list-unstyled mb-0">
+                    {% for job in alert_jobs %}
+                    <li class="mb-2">
+                        <a href="{% url 'jobs:detail' job.pk %}">
+                            Job #{{ job.id }} - {{ job.vehicle.plate_number }}
+                        </a>
+                        <br>
+                        <small class="text-danger">Pending extra services</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">No alerts at the moment.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

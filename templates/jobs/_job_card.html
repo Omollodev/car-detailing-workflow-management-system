@@ -1,0 +1,51 @@
+{% load humanize %}
+<div class="card mb-2 job-card {% if job.need_alert %}border-danger{% endif %}" data-job-id="{{ job.id }}">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+                <span class="badge {{ job.priority_badge_class }} me-1">{{ job.get_priority_display }}</span>
+                {% if job.need_alert %}
+                <span class="badge bg-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Alert
+                </span>
+                {% endif %}
+            </div>
+            <small class="text-muted">#{{ job.queue_number }}</small>
+        </div>
+        
+        <h6 class="card-title mb-1">
+            <i class="bi bi-car-front me-1"></i>
+            {{ job.vehicle.plate_number }}
+        </h6>
+        <p class="card-text small text-muted mb-2">
+            {{ job.vehicle.make }} {{ job.vehicle.model }}
+        </p>
+        
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <small>
+                <i class="bi bi-person me-1"></i>
+                {{ job.customer.name|truncatechars:15 }}
+            </small>
+            <small class="text-muted">
+                <i class="bi bi-clock me-1"></i>
+                {{ job.formatted_estimated_duration }}
+            </small>
+        </div>
+        
+        {% if job.assigned_worker %}
+        <div class="mb-2">
+            <small class="text-primary">
+                <i class="bi bi-person-badge me-1"></i>
+                {{ job.assigned_worker.name }}
+            </small>
+        </div>
+        {% endif %}
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <strong class="text-success">{{ job.formatted_total_price }}</strong>
+            <a href="{% url 'jobs:detail' job.pk %}" class="btn btn-sm btn-outline-primary">
+                View <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>

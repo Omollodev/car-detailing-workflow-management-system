@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notifications - DetailFlow{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Notifications</h1>
+        {% if notifications %}
+        <form method="post" action="{% url 'notifications:mark_all_read' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-check-all me-1"></i>Mark All as Read
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            {% if notifications %}
+            <div class="list-group list-group-flush">
+                {% for notification in notifications %}
+                <div class="list-group-item {% if not notification.is_read %}bg-light{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <span class="badge rounded-pill 
+                                    {% if notification.notification_type == 'job_assigned' %}bg-primary
+                                    {% elif notification.notification_type == 'job_completed' %}bg-success
+                                    {% elif notification.notification_type == 'job_cancelled' %}bg-danger
+                                    {% elif notification.notification_type == 'payment' %}bg-warning text-dark
+                                    {% else %}bg-secondary{% endif %} p-2">
+                                    <i class="bi 
+                                        {% if notification.notification_type == 'job_assigned' %}bi-briefcase
+                                        {% elif notification.notification_type == 'job_completed' %}bi-check-lg
+                                        {% elif notification.notification_type == 'job_cancelled' %}bi-x-lg
+                                        {% elif notification.notification_type == 'payment' %}bi-credit-card
+                                        {% else %}bi-bell{% endif %}"></i>
+                                </span>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">{{ notification.title }}</h6>
+                                <p class="text-muted mb-1">{{ notification.message }}</p>
+                                <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                            </div>
+                        </div>
+                        {% if not notification.is_read %}
+                        <form method="post" action="{% url 'notifications:mark_read' notification.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                Mark Read
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-bell-slash fs-1 text-muted d-block mb-3"></i>
+                <p class="text-muted mb-0">No notifications yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if notifications.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if notifications.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ notifications.previous_page_number }}">Previous</a>
+            </li>
+            {% endif %}
+            {% if notifications.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ notifications.next_page_number }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

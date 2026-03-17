@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Jobs - DetailFlow{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="h3 mb-0">Jobs</h1>
+        <p class="text-muted mb-0">Track and manage detailing jobs</p>
+    </div>
+    {% if user.is_manager %}
+    <div class="col-auto">
+        <a href="{% url 'jobs:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> New Job
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input type="text" class="form-control" name="q" value="{{ search_query }}" placeholder="Plate, customer name, phone">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All</option>
+                    <option value="waiting" {% if status_filter == "waiting" %}selected{% endif %}>Waiting ({{ status_counts.waiting }})</option>
+                    <option value="in_progress" {% if status_filter == "in_progress" %}selected{% endif %}>In Progress ({{ status_counts.in_progress }})</option>
+                    <option value="awaiting_extra" {% if status_filter == "awaiting_extra" %}selected{% endif %}>Awaiting Extra ({{ status_counts.awaiting_extra }})</option>
+                    <option value="completed" {% if status_filter == "completed" %}selected{% endif %}>Completed ({{ status_counts.completed }})</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Priority</label>
+                <select name="priority" class="form-select">
+                    <option value="">All</option>
+                    <option value="normal" {% if priority_filter == "normal" %}selected{% endif %}>Normal</option>
+                    <option value="high" {% if priority_filter == "high" %}selected{% endif %}>High</option>
+                    <option value="urgent" {% if priority_filter == "urgent" %}selected{% endif %}>Urgent</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-secondary" type="submit">
+                    <i class="bi bi-search me-1"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if jobs %}
+<div class="row">
+    <div class="col-lg-8">
+        {% for job in jobs %}
+            {% include "jobs/_job_card.html" %}
+        {% endfor %}
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                Quick Stats
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>Waiting:</strong> {{ status_counts.waiting }}</p>
+                <p class="mb-1"><strong>In Progress:</strong> {{ status_counts.in_progress }}</p>
+                <p class="mb-1"><strong>Awaiting Extra:</strong> {{ status_counts.awaiting_extra }}</p>
+                <p class="mb-0"><strong>Completed:</strong> {{ status_counts.completed }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-clipboard-check fs-1 text-muted mb-3 d-block"></i>
+        <p class="text-muted mb-3">No jobs found.</p>
+        {% if user.is_manager %}
+        <a href="{% url 'jobs:create' %}" class="btn btn-primary">Create a Job</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

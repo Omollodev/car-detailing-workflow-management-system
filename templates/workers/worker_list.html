@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Workers - DetailFlow{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Workers</h1>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if workers %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Worker</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Current Job</th>
+                            <th class="text-center">Jobs Completed</th>
+                            <th class="text-center">Avg Time (min)</th>
+                            <th class="text-center">Rating</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for worker in workers %}
+                        <tr>
+                            <td>
+                                <div class="fw-medium">
+                                    <a href="{% url 'workers:detail' worker.pk %}">
+                                        {{ worker.name }}
+                                    </a>
+                                </div>
+                                <div class="text-muted small">
+                                    {{ worker.user.phone|default:"No phone" }}
+                                </div>
+                            </td>
+                            <td>{{ worker.user.get_role_display }}</td>
+                            <td>
+                                {% if worker.is_available %}
+                                    <span class="badge bg-success">Available</span>
+                                {% elif worker.current_job %}
+                                    <span class="badge bg-primary">On Job</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Unavailable</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if worker.current_job %}
+                                    <a href="{% url 'jobs:detail' worker.current_job.pk %}">
+                                        Job #{{ worker.current_job.id }} · {{ worker.current_job.vehicle.plate_number }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted small">None</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ worker.total_jobs_completed }}</td>
+                            <td class="text-center">{{ worker.average_completion_time }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-warning text-dark">
+                                    {{ worker.rating|floatformat:1 }}/5
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'workers:edit' worker.pk %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No workers found.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

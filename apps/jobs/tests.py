@@ -1,232 +1,163 @@
 from decimal import Decimal
-from django.test import TestCase, Client
-from django.urls import reverse
-from django.contrib.auth import get_user_model
-from django.utils import timezone
 
-from apps.jobs.models import Job, JobStatusLog
+from django.contrib.auth import get_user_model
+from django.test import Client, TestCase
+from django.urls import reverse
+
 from apps.customers.models import Customer, Vehicle
-from apps.services.models import Service, ServiceCategory
-from apps.workers.models import Worker
+from apps.jobs.models import Job, JobService
+from apps.services.models import Service
+from apps.workers.models import WorkerProfile
 
 User = get_user_model()
 
 
 class JobModelTests(TestCase):
+    """Tests for core Job model behaviour."""
+
     def setUp(self):
         self.user = User.objects.create_user(
-            username='testuser',
-            password='testpass123'
+            username="manager",
+            password="testpass123",
+            role="manager",
         )
         self.customer = Customer.objects.create(
-            name='John Doe',
-            phone='0712345678',
-            created_by=self.user
+            name="John Doe",
+            phone="0712345678",
         )
         self.vehicle = Vehicle.objects.create(
             customer=self.customer,
-            make='Toyota',
-            model='Corolla',
-            registration_number='KBX 123A'
+            plate_number="KBX123A",
+            make="Toyota",
+            model="Corolla",
         )
-        self.category = ServiceCategory.objects.create(name='Exterior')
-        self.service = Service.objects.create(
-            name='Full Wash',
-            price=Decimal('500.00'),
+        self.service_basic = Service.objects.create(
+            name="Full Wash",
+            price=Decimal("500.00"),
             estimated_duration=30,
-            category=self.category
+            category="basic",
         )
+        self.service_extra = Service.objects.create(
+            name="Engine Wash",
+            price=Decimal("800.00"),
+            estimated_duration=40,
+            category="extra",
+        )
+        self.worker_user = User.objects.create_user(
+            username="worker",
+            password="testpass123",
+            role="worker",
+        )
+        self.worker = WorkerProfile.objects.create(user=self.worker_user)
+
         self.job = Job.objects.create(
             customer=self.customer,
             vehicle=self.vehicle,
-            created_by=self.user
+            created_by=self.user,
+            assigned_worker=self.worker,
         )
-        self.job.services.add(self.service)
+        JobService.objects.create(job=self.job, service=self.service_basic)
+        JobService.objects.create(job=self.job, service=self.service_extra)
 
-    def test_job_creation(self):
-        """Test job is created correctly"""
-        self.assertEqual(self.job.customer, self.customer)
-        self.assertEqual(self.job.vehicle, self.vehicle)
-        self.assertEqual(self.job.status, 'pending')
+    def test_calculate_totals(self):
+        """Job.calculate_totals should sum prices and durations."""
+        self.job.calculate_totals()
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.estimated_price, Decimal("1300.00"))
+        self.assertEqual(self.job.estimated_duration, 70)
 
-    def test_job_number_generation(self):
-        """Test job number is auto-generated"""
-        self.assertTrue(self.job.job_number.startswith('JOB-'))
+    def test_has_pending_extra_services_true(self):
+        """Job.has_pending_extra_services should detect incomplete extras."""
+        self.assertTrue(self.job.has_pending_extra_services())
 
-    def test_job_total_price(self):
-        """Test job total price calculation"""
-        self.assertEqual(self.job.total_price, Decimal('500.00'))
+    def test_change_status_blocks_completion_with_pending_extras(self):
+        """Jobs cannot be completed while extra services are pending."""
+        can_change = self.job.change_status("completed", user=self.user)
+        self.assertFalse(can_change)
+        self.assertNotEqual(self.job.status, "completed")
 
-    def test_job_final_price_with_discount(self):
-        """Test final price with discount"""
-        self.job.discount = Decimal('100.00')
-        self.job.save()
-        self.assertEqual(self.job.final_price, Decimal('400.00'))
-
-    def test_job_status_transition(self):
-        """Test job status transitions"""
-        self.job.start_job(self.user)
-        self.assertEqual(self.job.status, 'in_progress')
-        
-        self.job.complete_job(self.user)
-        self.assertEqual(self.job.status, 'completed')
-
-    def test_job_cannot_complete_from_pending(self):
-        """Test job cannot be completed directly from pending"""
-        # This should raise an exception or not change status
-        with self.assertRaises(Exception):
-            self.job.complete_job(self.user)
+    def test_change_status_valid_transition(self):
+        """Valid status transitions should succeed and update status."""
+        self.assertTrue(self.job.change_status("in_progress", user=self.user))
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.status, "in_progress")
 
 
-class JobStatusLogTests(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(
-            username='testuser',
-            password='testpass123'
-        )
-        self.customer = Customer.objects.create(
-            name='John Doe',
-            phone='0712345678',
-            created_by=self.user
-        )
-        self.vehicle = Vehicle.objects.create(
-            customer=self.customer,
-            make='Toyota',
-            model='Corolla',
-            registration_number='KBX 123A'
-        )
-        self.job = Job.objects.create(
-            customer=self.customer,
-            vehicle=self.vehicle,
-            created_by=self.user
-        )
+class JobViewsTests(TestCase):
+    """Smoke tests for key job views."""
 
-    def test_status_log_creation(self):
-        """Test status log is created on status change"""
-        initial_count = JobStatusLog.objects.filter(job=self.job).count()
-        self.job.start_job(self.user)
-        new_count = JobStatusLog.objects.filter(job=self.job).count()
-        self.assertEqual(new_count, initial_count + 1)
-
-    def test_status_log_records_user(self):
-        """Test status log records the user who made the change"""
-        self.job.start_job(self.user)
-        log = JobStatusLog.objects.filter(job=self.job).last()
-        self.assertEqual(log.changed_by, self.user)
-
-
-class JobViewTests(TestCase):
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser',
-            password='testpass123',
-            role='manager'
+        self.manager = User.objects.create_user(
+            username="manager",
+            password="testpass123",
+            role="manager",
         )
         self.customer = Customer.objects.create(
-            name='John Doe',
-            phone='0712345678',
-            created_by=self.user
+            name="Jane Doe",
+            phone="0711111111",
         )
         self.vehicle = Vehicle.objects.create(
             customer=self.customer,
-            make='Toyota',
-            model='Corolla',
-            registration_number='KBX 123A'
+            plate_number="KBZ999Z",
+            make="Nissan",
+            model="Note",
         )
-        self.category = ServiceCategory.objects.create(name='Exterior')
         self.service = Service.objects.create(
-            name='Full Wash',
-            price=Decimal('500.00'),
-            estimated_duration=30,
-            category=self.category
+            name="Quick Wash",
+            price=Decimal("300.00"),
+            estimated_duration=20,
+            category="basic",
         )
-        self.job = Job.objects.create(
-            customer=self.customer,
-            vehicle=self.vehicle,
-            created_by=self.user
-        )
-        self.job.services.add(self.service)
-        self.client.login(username='testuser', password='testpass123')
+        self.client.login(username="manager", password="testpass123")
 
-    def test_job_list_view(self):
-        """Test job list view"""
-        response = self.client.get(reverse('jobs:job_list'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.job.job_number)
-
-    def test_job_detail_view(self):
-        """Test job detail view"""
-        response = self.client.get(reverse('jobs:job_detail', args=[self.job.pk]))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.customer.name)
-
-    def test_job_create_view(self):
-        """Test job creation view"""
-        response = self.client.get(reverse('jobs:job_create'))
+    def test_job_list_view_ok(self):
+        url = reverse("jobs:list")
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-    def test_job_create_post(self):
-        """Test job creation via POST"""
-        response = self.client.post(reverse('jobs:job_create'), {
-            'customer': self.customer.pk,
-            'vehicle': self.vehicle.pk,
-            'services': [self.service.pk],
-            'priority': 'normal'
-        })
-        self.assertEqual(response.status_code, 302)  # Redirect on success
-        self.assertEqual(Job.objects.count(), 2)
-
-    def test_job_start_action(self):
-        """Test starting a job"""
-        response = self.client.post(reverse('jobs:job_start', args=[self.job.pk]))
-        self.assertEqual(response.status_code, 302)
-        self.job.refresh_from_db()
-        self.assertEqual(self.job.status, 'in_progress')
+    def test_job_create_view_get_ok(self):
+        url = reverse("jobs:create")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
 
 
-class JobAPITests(TestCase):
+class JobApiTests(TestCase):
+    """Tests for dashboard/job AJAX APIs."""
+
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser',
-            password='testpass123',
-            role='manager'
+        self.manager = User.objects.create_user(
+            username="manager",
+            password="testpass123",
+            role="manager",
         )
         self.customer = Customer.objects.create(
-            name='John Doe',
-            phone='0712345678',
-            created_by=self.user
+            name="API Customer",
+            phone="0700000000",
         )
         self.vehicle = Vehicle.objects.create(
             customer=self.customer,
-            make='Toyota',
-            model='Corolla',
-            registration_number='KBX 123A'
+            plate_number="KCA000A",
+            make="Honda",
+            model="Fit",
         )
         self.job = Job.objects.create(
             customer=self.customer,
             vehicle=self.vehicle,
-            created_by=self.user
+            created_by=self.manager,
         )
-        self.client.login(username='testuser', password='testpass123')
+        self.client.login(username="manager", password="testpass123")
 
-    def test_api_update_status(self):
-        """Test API endpoint for updating job status"""
-        response = self.client.post(
-            reverse('jobs:api_update_status', args=[self.job.pk]),
-            {'status': 'in_progress'},
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, 200)
-        self.job.refresh_from_db()
-        self.assertEqual(self.job.status, 'in_progress')
+    def test_dashboard_stats_api_requires_auth(self):
+        self.client.logout()
+        response = self.client.get("/api/dashboard/stats/")
+        self.assertEqual(response.status_code, 401)
 
-    def test_api_kanban_data(self):
-        """Test API endpoint for kanban board data"""
-        response = self.client.get(reverse('jobs:api_kanban'))
+    def test_dashboard_stats_api_ok(self):
+        response = self.client.get("/api/dashboard/stats/")
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertIn('pending', data)
-        self.assertIn('in_progress', data)
-        self.assertIn('completed', data)
+        self.assertIn("waiting", data)
+        self.assertIn("revenue_today", data)
+

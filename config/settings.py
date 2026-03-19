@@ -81,7 +81,7 @@ ASGI_APPLICATION = 'config.asgi.application'
 
 
 # Database configuration
-# SQLite for development, PostgreSQL for production
+# MySQL for development, PostgreSQL for production
 if os.getenv('DATABASE_URL'):
     import dj_database_url
     DATABASES = {
@@ -91,11 +91,11 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.getenv('DATABASE_NAME', 'safi_car_detailing'),
-            'USER': os.getenv('DATABASE_USER', 'root'),
-            'PASSWORD': os.getenv('DATABASE_PASSWORD', 'kalisec.2026'),
-            'HOST': os.getenv('DATABASE_HOST', '127.0.0.1'),
-            'PORT': os.getenv('DATABASE_PORT', '3306'),
+            'NAME': os.getenv('DATABASE_NAME'),
+            'USER': os.getenv('DATABASE_USER'),
+            'PASSWORD': os.getenv('DATABASE_PASSWORD'),
+            'HOST': os.getenv('DATABASE_HOST'),
+            'PORT': os.getenv('DATABASE_PORT'),
         }
     }
 

@@ -1,0 +1,16 @@
+# Exported from Render on 2026-03-19T21:48:35Z
+version: "1"
+projects:
+- name: My project
+  environments:
+  - name: Production
+    databases:
+    - name: OnlineVoting
+      databaseName: online_voting_db_pnoa
+      user: devox
+      plan: free
+      region: oregon
+      ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
+      postgresMajorVersion: "18"

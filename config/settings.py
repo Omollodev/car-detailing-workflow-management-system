@@ -21,7 +21,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-change-this-in-prod
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -72,6 +72,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'apps.notifications.context_processors.unread_notifications_count',
             ],
         },
     },
@@ -124,6 +125,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
 
+# django-crispy-forms + crispy-bootstrap5
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+
 # Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Africa/Nairobi'
@@ -131,11 +136,13 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL = '/static/'
+
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    os.path.join(BASE_DIR, 'static')
 ]
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (User uploads)
@@ -165,13 +172,14 @@ MESSAGE_TAGS = {
 }
 
 # AJAX Polling interval (in milliseconds)
-AJAX_POLLING_INTERVAL = 30000  # 30 seconds
+# Staff notification dropdown polling (ms); lower = faster manager/worker updates
+AJAX_POLLING_INTERVAL = 12000
 
 # Business Configuration
-BUSINESS_NAME = os.getenv('BUSINESS_NAME', 'Safi Car Detailing')
-BUSINESS_PHONE = os.getenv('BUSINESS_PHONE', '+254 713 318 602')
-BUSINESS_EMAIL = os.getenv('BUSINESS_EMAIL', 'info@saficar.com')
-BUSINESS_ADDRESS = os.getenv('BUSINESS_ADDRESS', 'Safi, Kenya')
+BUSINESS_NAME = os.getenv('BUSINESS_NAME')
+BUSINESS_PHONE = os.getenv('BUSINESS_PHONE')
+BUSINESS_EMAIL = os.getenv('BUSINESS_EMAIL')
+BUSINESS_ADDRESS = os.getenv('BUSINESS_ADDRESS')
 
 # Security settings for production
 if not DEBUG:

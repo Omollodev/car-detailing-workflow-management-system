@@ -14,14 +14,14 @@
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body{% if user.is_authenticated and not user.is_customer %} data-staff-notification-poll="1"{% endif %}>
     {% if user.is_authenticated %}
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
         <div class="container-fluid">
-            <a class="navbar-brand d-flex align-items-center" href="{% url 'dashboard:index' %}">
-                <i class="bi bi-car-front-fill me-2"></i>
-                <span>Safi Car Detailing</span>
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{% if user.is_customer %}{% url 'customers:portal' %}{% else %}{% url 'dashboard:index' %}{% endif %}">
+                <img src="{% static 'imgs/carwash-logo.png' %}" alt="Safi Car Detailing" height="36" class="d-inline-block">
+                <span class="d-none d-sm-inline">Safi Car Detailing</span>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -29,6 +29,40 @@
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
+                {% if user.is_customer %}
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'portal' %}active{% endif %}" href="{% url 'customers:portal' %}">
+                            <i class="bi bi-house-door me-1"></i> My dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'book_job' %}active{% endif %}" href="{% url 'customers:book_job' %}">
+                            <i class="bi bi-calendar-plus me-1"></i> Book service
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'jobs' in request.path %}active{% endif %}" href="{% url 'jobs:list' %}">
+                            <i class="bi bi-clipboard-check me-1"></i> My jobs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'portal_profile' %}active{% endif %}" href="{% url 'customers:portal_profile' %}">
+                            <i class="bi bi-shop me-1"></i> Store &amp; profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'portal_vehicle_add' %}active{% endif %}" href="{% url 'customers:portal_vehicle_add' %}">
+                            <i class="bi bi-plus-circle me-1"></i> Add vehicle
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'services' in request.path %}active{% endif %}" href="{% url 'services:list' %}">
+                            <i class="bi bi-list-ul me-1"></i> Service list
+                        </a>
+                    </li>
+                </ul>
+                {% else %}
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'dashboard:index' %}">
@@ -63,17 +97,17 @@
                     </li>
                     {% endif %}
                 </ul>
+                {% endif %}
                 
                 <ul class="navbar-nav">
-                    <!-- Notifications -->
+                    {% if not user.is_customer %}
+                    <!-- Notifications (staff) -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown">
+                        <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-bell"></i>
-                            {% if unread_notifications_count %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-badge">
-                                {{ unread_notifications_count }}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {% if not unread_notifications_count %}d-none{% endif %}" id="notification-badge">
+                                {{ unread_notifications_count|default:0 }}
                             </span>
-                            {% endif %}
                         </a>
                         <div class="dropdown-menu dropdown-menu-end notification-dropdown" style="width: 320px;">
                             <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
@@ -84,13 +118,14 @@
                                 </a>
                             </div>
                             <div id="notification-list" class="notification-list">
-                                <p class="text-center text-muted py-3">Loading...</p>
+                                <p class="text-center text-muted py-3">Loading…</p>
                             </div>
                             <div class="border-top text-center py-2">
                                 <a href="{% url 'notifications:list' %}" class="small">View all notifications</a>
                             </div>
                         </div>
                     </li>
+                    {% endif %}
                     
                     <!-- User dropdown -->
                     <li class="nav-item dropdown">

@@ -8,6 +8,12 @@ from . import views
 app_name = 'customers'
 
 urlpatterns = [
+    # Customer self-service portal (must be before <int:pk>/ routes)
+    path('portal/', views.customer_portal_view, name='portal'),
+    path('portal/profile/', views.customer_portal_profile_view, name='portal_profile'),
+    path('portal/vehicle/add/', views.customer_portal_vehicle_add_view, name='portal_vehicle_add'),
+    path('portal/book/', views.customer_book_job_view, name='book_job'),
+
     # Customers
     path('', views.customer_list_view, name='list'),
     path('create/', views.customer_create_view, name='create'),

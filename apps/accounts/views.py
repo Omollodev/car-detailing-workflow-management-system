@@ -9,9 +9,48 @@ from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 
-from .forms import LoginForm, UserRegistrationForm, UserUpdateForm, UserAdminForm
+from apps.customers.models import Customer
+
+from .forms import (
+    LoginForm,
+    UserRegistrationForm,
+    UserUpdateForm,
+    UserAdminForm,
+    CustomerRegistrationForm,
+)
 from .decorators import admin_required
 from .models import User
+
+
+def customer_register_view(request):
+    """
+    Public registration for customer portal accounts only.
+    """
+    if request.user.is_authenticated:
+        if request.user.is_customer:
+            return redirect('customers:portal')
+        return redirect('dashboard:index')
+
+    if request.method == 'POST':
+        form = CustomerRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            name = f"{form.cleaned_data['first_name']} {form.cleaned_data['last_name']}".strip()
+            Customer.objects.create(
+                user=user,
+                name=name or user.username,
+                phone=form.cleaned_data['phone'],
+                email=form.cleaned_data['email'],
+                business_name=form.cleaned_data.get('business_name', ''),
+                address=form.cleaned_data.get('address', ''),
+            )
+            login(request, user)
+            messages.success(request, 'Welcome! Your customer account is ready.')
+            return redirect('customers:portal')
+    else:
+        form = CustomerRegistrationForm()
+
+    return render(request, 'accounts/customer_register.html', {'form': form})
 
 
 def login_view(request):
@@ -19,8 +58,10 @@ def login_view(request):
     Handle user login.
     """
     if request.user.is_authenticated:
+        if request.user.is_customer:
+            return redirect('customers:portal')
         return redirect('dashboard:index')
-    
+
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
@@ -32,10 +73,15 @@ def login_view(request):
                 request.session.set_expiry(0)
             
             messages.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
-            
-            # Redirect to next page or dashboard
-            next_url = request.GET.get('next', 'dashboard:index')
-            return redirect(next_url)
+
+            if user.is_customer:
+                return redirect('customers:portal')
+
+            # Redirect to next page or staff dashboard
+            next_url = request.GET.get('next')
+            if next_url:
+                return redirect(next_url)
+            return redirect('dashboard:index')
         else:
             messages.error(request, 'Invalid username or password.')
     else:
@@ -163,6 +209,8 @@ def change_password_view(request):
             user = form.save()
             update_session_auth_hash(request, user)
             messages.success(request, 'Your password has been changed successfully.')
+            if request.user.is_customer:
+                return redirect('customers:portal')
             return redirect('accounts:profile')
         else:
             messages.error(request, 'Please correct the errors below.')

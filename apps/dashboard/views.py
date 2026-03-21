@@ -18,6 +18,8 @@ def landing_page(request):
     Public landing page for unauthenticated users.
     """
     if request.user.is_authenticated:
+        if getattr(request.user, 'is_customer', False):
+            return redirect('customers:portal')
         return redirect('dashboard:index')
     
     return render(request, 'dashboard/landing.html')
@@ -29,6 +31,9 @@ def dashboard_index(request):
     Main dashboard with Kanban board and statistics.
     """
     user = request.user
+    if getattr(user, 'is_customer', False):
+        return redirect('customers:portal')
+
     today = timezone.now().date()
     
     # Job counts by status

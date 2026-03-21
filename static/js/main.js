@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initKanban();
     initToasts();
     initConfirmDialogs();
+    initStaffNotificationPoll();
 });
 
 // Sidebar Toggle (Mobile)
@@ -268,6 +269,102 @@ function printElement(elementId) {
         }, 250);
     }
 }
+
+// Staff notifications: poll API so managers/workers see new alerts (e.g. job completed)
+let _lastUnreadNotificationCount = -1;
+
+function _notificationEscapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function _renderNotificationDropdown(items) {
+    const listEl = document.getElementById('notification-list');
+    if (!listEl) return;
+
+    if (!items || !items.length) {
+        listEl.innerHTML = '<p class="text-center text-muted py-3 mb-0">No notifications yet.</p>';
+        return;
+    }
+
+    const rows = items.map(function (n) {
+        const readClass = n.is_read ? '' : 'bg-light';
+        const jobLink = n.job_id ? '/jobs/' + n.job_id + '/' : '#';
+        return (
+            '<div class="px-3 py-2 border-bottom small ' + readClass + '">' +
+            '<div class="fw-medium">' + _notificationEscapeHtml(n.title || '') + '</div>' +
+            '<div class="text-muted">' + _notificationEscapeHtml(n.message || '') + '</div>' +
+            (n.job_id ? '<a class="small" href="' + jobLink + '">View job</a>' : '') +
+            '</div>'
+        );
+    });
+    listEl.innerHTML = rows.join('');
+}
+
+function _updateNotificationBadge(count) {
+    const badge = document.getElementById('notification-badge');
+    if (!badge) return;
+    if (count > 0) {
+        badge.textContent = count;
+        badge.classList.remove('d-none');
+    } else {
+        badge.textContent = '0';
+        badge.classList.add('d-none');
+    }
+}
+
+function fetchStaffNotifications() {
+    if (!document.body.dataset.staffNotificationPoll) return;
+    fetch('/notifications/api/', {
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' }
+    })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            const unread = data.unread_count || 0;
+            if (_lastUnreadNotificationCount >= 0 && unread > _lastUnreadNotificationCount) {
+                showToast('You have new notifications', 'info');
+            }
+            _lastUnreadNotificationCount = unread;
+            _updateNotificationBadge(unread);
+            _renderNotificationDropdown(data.notifications || []);
+            const lu = document.getElementById('last-updated');
+            if (lu) {
+                lu.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+            }
+        })
+        .catch(function () { /* ignore */ });
+}
+
+function initStaffNotificationPoll() {
+    if (!document.body.dataset.staffNotificationPoll) return;
+    const interval = typeof POLLING_INTERVAL !== 'undefined' ? POLLING_INTERVAL : 12000;
+    fetchStaffNotifications();
+    setInterval(fetchStaffNotifications, interval);
+}
+
+function markAllNotificationsRead() {
+    fetch('/notifications/mark-all-read/', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+        .then(function (r) { return r.json(); })
+        .then(function () {
+            _lastUnreadNotificationCount = 0;
+            _updateNotificationBadge(0);
+            fetchStaffNotifications();
+        })
+        .catch(function () { window.location.reload(); });
+}
+
+window.markAllNotificationsRead = markAllNotificationsRead;
 
 // Export functions for global use
 window.DetailFlow = {

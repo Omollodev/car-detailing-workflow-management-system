@@ -14,13 +14,15 @@ class User(AbstractUser):
     Roles:
     - admin: Full system access, can manage users and settings
     - manager: Can manage jobs, workers, customers, and view reports
-    - worker: Can view assigned jobs and update job status
+    - worker: Can view assigned jobs and update job status (created by admin/manager)
+    - customer: Self-registered portal user; books services and manages own profile/vehicles
     """
     
     class Role(models.TextChoices):
         ADMIN = 'admin', _('Administrator')
         MANAGER = 'manager', _('Manager')
         WORKER = 'worker', _('Worker')
+        CUSTOMER = 'customer', _('Customer')
     
     role = models.CharField(
         max_length=20,
@@ -86,6 +88,11 @@ class User(AbstractUser):
     def is_worker(self) -> bool:
         """Check if user has worker role."""
         return self.role == self.Role.WORKER
+    
+    @property
+    def is_customer(self) -> bool:
+        """Check if user is a self-service customer portal user."""
+        return self.role == self.Role.CUSTOMER
     
     def can_manage_jobs(self) -> bool:
         """Check if user can create/edit jobs."""

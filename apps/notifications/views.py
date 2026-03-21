@@ -21,7 +21,7 @@ def notification_list_view(request):
     
     unread_count = Notification.get_unread_count(request.user)
     
-    return render(request, 'notifications/list.html', {
+    return render(request, 'notifications/notification_list.html', {
         'notifications': notifications,
         'unread_count': unread_count,
     })

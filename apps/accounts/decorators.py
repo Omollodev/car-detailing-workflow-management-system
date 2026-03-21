@@ -62,6 +62,24 @@ def worker_required(view_func):
     return _wrapped_view
 
 
+def customer_required(view_func):
+    """
+    Decorator for views that only customer portal users may access.
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            messages.warning(request, 'Please log in to continue.')
+            return redirect('accounts:login')
+
+        if not getattr(request.user, 'is_customer', False):
+            messages.error(request, 'This area is for customers only.')
+            return redirect('dashboard:index')
+
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
+
 def ajax_login_required(view_func):
     """
     Decorator for AJAX views that returns JSON error if not authenticated.

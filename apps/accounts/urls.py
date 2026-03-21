@@ -11,6 +11,7 @@ urlpatterns = [
     # Authentication
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('register/customer/', views.customer_register_view, name='customer_register'),
     
     # Profile
     path('profile/', views.profile_view, name='profile'),

@@ -197,3 +197,37 @@ class QuickCustomerVehicleForm(forms.Form):
         )
         
         return customer, vehicle
+
+
+class CustomerPortalProfileForm(forms.ModelForm):
+    """
+    Form for customers to update their own business/store and contact details.
+    """
+
+    class Meta:
+        model = Customer
+        fields = [
+            'business_name',
+            'name',
+            'phone',
+            'phone_secondary',
+            'email',
+            'address',
+            'service_preferences',
+        ]
+        widgets = {
+            'business_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Business or store name (optional)',
+            }),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone_secondary': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'service_preferences': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Preferred services or notes for the shop',
+            }),
+        }

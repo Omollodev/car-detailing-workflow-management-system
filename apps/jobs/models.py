@@ -292,6 +292,11 @@ class Job(models.Model):
         )
         
         self.save()
+        if (
+            new_status == self.Status.COMPLETED
+            and old_status != self.Status.COMPLETED
+        ):
+            _notify_managers_job_completed(self, user)
         return True
     
     def update_alert_flag(self):
@@ -557,3 +562,34 @@ class JobService(models.Model):
         # Update job alert flag
         self.job.update_alert_flag()
         self.job.save(update_fields=['need_alert'])
+
+
+def _notify_managers_job_completed(job: 'Job', completed_by=None) -> None:
+    """
+    Notify all active admins/managers when a job moves to completed.
+    Imports are local to avoid circular dependencies.
+    """
+    from django.contrib.auth import get_user_model
+    from apps.notifications.models import Notification
+
+    User = get_user_model()
+    recipients = User.objects.filter(
+        role__in=[User.Role.ADMIN, User.Role.MANAGER],
+        is_active=True,
+    )
+    who = (
+        completed_by.get_full_name() or completed_by.username
+        if completed_by
+        else 'Staff'
+    )
+    for recipient in recipients:
+        Notification.create_notification(
+            recipient=recipient,
+            notification_type=Notification.NotificationType.JOB_COMPLETED,
+            title='Job completed',
+            message=(
+                f'{who} marked Job #{job.id} ({job.vehicle.plate_number}) '
+                f'for {job.customer.name} as completed.'
+            ),
+            job=job,
+        )

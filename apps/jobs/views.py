@@ -10,13 +10,25 @@ from django.http import JsonResponse
 from django.db.models import Q
 from django.utils import timezone
 
-from apps.accounts.decorators import manager_required, worker_required
+from apps.accounts.decorators import manager_required
 from apps.notifications.models import Notification
 from .models import Job, JobService
 from .forms import (
-    JobCreateForm, JobEditForm, JobStatusChangeForm, 
-    JobAssignWorkerForm, AddExtraServiceForm, JobServiceCompleteForm
+    JobCreateForm, JobEditForm, JobStatusChangeForm,
+    JobAssignWorkerForm, AddExtraServiceForm, JobServiceCompleteForm,
 )
+
+
+def _user_can_complete_job_services(user, job):
+    """Staff only: managers/admins or the assigned worker."""
+    if getattr(user, 'is_customer', False):
+        return False
+    if user.is_manager:
+        return True
+    if user.is_worker:
+        wp = getattr(user, 'worker_profile', None)
+        return bool(wp and job.assigned_worker_id == wp.pk)
+    return False
 
 
 @login_required
@@ -27,33 +39,37 @@ def job_list_view(request):
     status_filter = request.GET.get('status', '')
     priority_filter = request.GET.get('priority', '')
     search_query = request.GET.get('q', '')
-    
+
     jobs = Job.objects.select_related(
         'customer', 'vehicle', 'assigned_worker__user'
     ).all()
-    
+
+    if getattr(request.user, 'is_customer', False):
+        profile = getattr(request.user, 'customer_profile', None)
+        jobs = jobs.filter(customer=profile) if profile else jobs.none()
+
+    # Counts before status/priority/search filters (sidebar / filters)
+    status_counts = {
+        'waiting': jobs.filter(status='waiting').count(),
+        'in_progress': jobs.filter(status='in_progress').count(),
+        'awaiting_extra': jobs.filter(status='awaiting_extra').count(),
+        'completed': jobs.filter(status='completed').count(),
+    }
+
     if status_filter:
         jobs = jobs.filter(status=status_filter)
-    
+
     if priority_filter:
         jobs = jobs.filter(priority=priority_filter)
-    
+
     if search_query:
         jobs = jobs.filter(
             Q(vehicle__plate_number__icontains=search_query) |
             Q(customer__name__icontains=search_query) |
             Q(customer__phone__icontains=search_query)
         )
-    
+
     jobs = jobs.order_by('-created_at')[:100]
-    
-    # Status counts for filters
-    status_counts = {
-        'waiting': Job.objects.filter(status='waiting').count(),
-        'in_progress': Job.objects.filter(status='in_progress').count(),
-        'awaiting_extra': Job.objects.filter(status='awaiting_extra').count(),
-        'completed': Job.objects.filter(status='completed').count(),
-    }
     
     return render(request, 'jobs/job_list.html', {
         'jobs': jobs,
@@ -75,7 +91,13 @@ def job_detail_view(request, pk):
         ).prefetch_related('jobservice_set__service'),
         pk=pk
     )
-    
+
+    if getattr(request.user, 'is_customer', False):
+        profile = getattr(request.user, 'customer_profile', None)
+        if not profile or job.customer_id != profile.pk:
+            messages.error(request, 'You do not have access to this job.')
+            return redirect('customers:portal')
+
     # Forms for various actions
     status_form = JobStatusChangeForm(initial={'status': job.status})
     assign_form = JobAssignWorkerForm()
@@ -177,6 +199,14 @@ def job_change_status_view(request, pk):
     """
     Change job status.
     """
+    if getattr(request.user, 'is_customer', False):
+        messages.error(request, 'You cannot change job status.')
+        return redirect('jobs:detail', pk=pk)
+
+    if not (request.user.is_worker or request.user.is_manager):
+        messages.error(request, 'You cannot change job status.')
+        return redirect('jobs:detail', pk=pk)
+
     job = get_object_or_404(Job, pk=pk)
     form = JobStatusChangeForm(request.POST)
     
@@ -344,7 +374,11 @@ def job_service_complete_view(request, pk, service_pk):
     """
     job = get_object_or_404(Job, pk=pk)
     job_service = get_object_or_404(JobService, pk=service_pk, job=job)
-    
+
+    if not _user_can_complete_job_services(request.user, job):
+        messages.error(request, 'You cannot update services on this job.')
+        return redirect('jobs:detail', pk=job.pk)
+
     form = JobServiceCompleteForm(request.POST, request.FILES)
     
     if form.is_valid():
@@ -375,7 +409,11 @@ def job_service_uncomplete_view(request, pk, service_pk):
     """
     job = get_object_or_404(Job, pk=pk)
     job_service = get_object_or_404(JobService, pk=service_pk, job=job)
-    
+
+    if not _user_can_complete_job_services(request.user, job):
+        messages.error(request, 'You cannot update services on this job.')
+        return redirect('jobs:detail', pk=job.pk)
+
     job_service.mark_incomplete(user=request.user)
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

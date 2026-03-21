@@ -9,7 +9,13 @@
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-2">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item">
+                        {% if user.is_customer %}
+                        <a href="{% url 'customers:portal' %}">My account</a>
+                        {% else %}
+                        <a href="{% url 'dashboard:index' %}">Dashboard</a>
+                        {% endif %}
+                    </li>
                     <li class="breadcrumb-item"><a href="{% url 'jobs:list' %}">Jobs</a></li>
                     <li class="breadcrumb-item active">Job #{{ job.id }}</li>
                 </ol>
@@ -31,7 +37,7 @@
         </div>
     </div>
 
-    {% if job.need_alert %}
+    {% if job.need_alert and not user.is_customer %}
     <div class="alert alert-danger">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
         <strong>Attention:</strong> This job has pending extra services. You cannot mark it complete until extras are done.
@@ -87,16 +93,20 @@
                             <div class="text-end">
                                 {% if js.is_completed %}
                                 <span class="badge bg-success">Completed</span>
+                                {% if not user.is_customer %}
                                 <form method="post" action="{% url 'jobs:service_uncomplete' job.pk js.pk %}" class="d-inline">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-secondary ms-2" type="submit">Undo</button>
                                 </form>
+                                {% endif %}
                                 {% else %}
                                 <span class="badge bg-secondary">Pending</span>
+                                {% if not user.is_customer %}
                                 <form method="post" action="{% url 'jobs:service_complete' job.pk js.pk %}" class="d-inline">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-primary ms-2" type="submit">Mark done</button>
                                 </form>
+                                {% endif %}
                                 {% endif %}
                             </div>
                         </div>
@@ -118,16 +128,20 @@
                             <div class="text-end">
                                 {% if js.is_completed %}
                                 <span class="badge bg-success">Completed</span>
+                                {% if not user.is_customer %}
                                 <form method="post" action="{% url 'jobs:service_uncomplete' job.pk js.pk %}" class="d-inline">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-secondary ms-2" type="submit">Undo</button>
                                 </form>
+                                {% endif %}
                                 {% else %}
                                 <span class="badge bg-warning text-dark">Pending</span>
+                                {% if not user.is_customer %}
                                 <form method="post" action="{% url 'jobs:service_complete' job.pk js.pk %}" class="d-inline">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-primary ms-2" type="submit">Mark done</button>
                                 </form>
+                                {% endif %}
                                 {% endif %}
                             </div>
                         </div>
@@ -169,6 +183,7 @@
         </div>
 
         <div class="col-lg-4">
+            {% if not user.is_customer %}
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">Actions</h5>
@@ -201,6 +216,7 @@
                     {% endif %}
                 </div>
             </div>
+            {% endif %}
 
             <div class="card mt-3">
                 <div class="card-header">

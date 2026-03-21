@@ -2,6 +2,7 @@
 Customer and Vehicle models for the Car Detailing system.
 """
 
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
@@ -13,7 +14,26 @@ class Customer(models.Model):
     
     Tracks customer contact information, service preferences,
     and loyalty metrics.
+    
+    When linked to a User (role=customer), the record backs the self-service portal.
     """
+    
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='customer_profile',
+        verbose_name=_('Portal account'),
+        help_text=_('Linked login for customer self-service (optional for walk-in records)'),
+    )
+    
+    business_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name=_('Business / store name'),
+        help_text=_('Optional business or fleet name for this account'),
+    )
     
     name = models.CharField(
         max_length=200,

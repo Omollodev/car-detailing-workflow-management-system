@@ -10,6 +10,46 @@ from apps.services.models import Service
 from apps.workers.models import WorkerProfile
 
 
+class CustomerJobBookingForm(forms.Form):
+    """
+    Customer self-service: pick vehicle, services, and instructions (no internal fields).
+    """
+
+    vehicle = forms.ModelChoiceField(
+        queryset=Vehicle.objects.none(),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Vehicle',
+    )
+    services = forms.ModelMultipleChoiceField(
+        queryset=Service.objects.filter(
+            is_active=True,
+            category=Service.Category.BASIC,
+        ),
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        label='Services needed',
+    )
+    priority = forms.ChoiceField(
+        choices=Job.Priority.choices,
+        initial=Job.Priority.NORMAL,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
+    special_instructions = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Any special requests for this visit…',
+        }),
+    )
+
+    def __init__(self, customer: Customer, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['vehicle'].queryset = Vehicle.objects.filter(
+            customer=customer,
+            is_active=True,
+        )
+
+
 class JobCreateForm(forms.ModelForm):
     """
     Form for creating a new job.

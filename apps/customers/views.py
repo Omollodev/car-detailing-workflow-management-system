@@ -9,9 +9,17 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 from django.db.models import Q
 
-from apps.accounts.decorators import manager_required
+from apps.accounts.decorators import manager_required, customer_required
+from apps.jobs.forms import CustomerJobBookingForm
+from apps.jobs.models import Job, JobService
+
 from .models import Customer, Vehicle
-from .forms import CustomerForm, VehicleForm, QuickCustomerVehicleForm
+from .forms import (
+    CustomerForm,
+    VehicleForm,
+    QuickCustomerVehicleForm,
+    CustomerPortalProfileForm,
+)
 
 
 @login_required
@@ -19,6 +27,9 @@ def customer_list_view(request):
     """
     List all customers with search functionality.
     """
+    if getattr(request.user, 'is_customer', False):
+        return redirect('customers:portal')
+
     query = request.GET.get('q', '')
     customers = Customer.objects.filter(is_active=True)
     
@@ -43,6 +54,11 @@ def customer_detail_view(request, pk):
     View customer details with vehicles and job history.
     """
     customer = get_object_or_404(Customer, pk=pk)
+    if getattr(request.user, 'is_customer', False):
+        profile = getattr(request.user, 'customer_profile', None)
+        if not profile or customer.pk != profile.pk:
+            messages.error(request, 'You do not have access to this page.')
+            return redirect('customers:portal')
     vehicles = customer.vehicles.all()
     recent_jobs = customer.jobs.all().order_by('-created_at')[:10]
     
@@ -176,7 +192,8 @@ def quick_customer_vehicle_view(request):
             
             # Check if we should redirect to job creation
             if request.GET.get('next') == 'job':
-                return redirect('jobs:create') + f'?customer={customer.pk}&vehicle={vehicle.pk}'
+                url = reverse('jobs:create')
+                return redirect(f'{url}?customer={customer.pk}&vehicle={vehicle.pk}')
             
             return redirect('customers:detail', pk=customer.pk)
     else:
@@ -253,6 +270,10 @@ def api_customer_vehicles(request, customer_pk):
     Get all vehicles for a customer (AJAX).
     """
     customer = get_object_or_404(Customer, pk=customer_pk)
+    if getattr(request.user, 'is_customer', False):
+        profile = getattr(request.user, 'customer_profile', None)
+        if not profile or profile.pk != customer_pk:
+            return JsonResponse({'error': 'Forbidden'}, status=403)
     vehicles = customer.vehicles.filter(is_active=True)
     
     data = [{
@@ -264,3 +285,104 @@ def api_customer_vehicles(request, customer_pk):
     } for v in vehicles]
     
     return JsonResponse({'vehicles': data})
+
+
+@login_required
+@customer_required
+def customer_portal_view(request):
+    """Customer dashboard: profile summary, vehicles, recent jobs."""
+    customer = getattr(request.user, 'customer_profile', None)
+    if not customer:
+        messages.error(
+            request,
+            'Your account has no customer profile. Please contact the shop.',
+        )
+        return redirect('accounts:logout')
+
+    recent_jobs = customer.jobs.order_by('-created_at')[:20]
+    return render(request, 'customers/portal.html', {
+        'customer': customer,
+        'recent_jobs': recent_jobs,
+    })
+
+
+@login_required
+@customer_required
+def customer_portal_profile_view(request):
+    """Update store / contact details for the logged-in customer."""
+    customer = request.user.customer_profile
+    if request.method == 'POST':
+        form = CustomerPortalProfileForm(request.POST, instance=customer)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your details were saved.')
+            return redirect('customers:portal')
+    else:
+        form = CustomerPortalProfileForm(instance=customer)
+    return render(request, 'customers/portal_profile.html', {
+        'form': form,
+        'customer': customer,
+    })
+
+
+@login_required
+@customer_required
+def customer_portal_vehicle_add_view(request):
+    """Add a vehicle to the logged-in customer's account."""
+    customer = request.user.customer_profile
+    if request.method == 'POST':
+        form = VehicleForm(request.POST)
+        if form.is_valid():
+            vehicle = form.save(commit=False)
+            vehicle.customer = customer
+            vehicle.save()
+            messages.success(request, f'Vehicle {vehicle.plate_number} added.')
+            return redirect('customers:portal')
+    else:
+        form = VehicleForm()
+    return render(request, 'customers/portal_vehicle_form.html', {
+        'form': form,
+        'customer': customer,
+        'title': 'Add vehicle',
+    })
+
+
+@login_required
+@customer_required
+def customer_book_job_view(request):
+    """Book a detailing job: choose vehicle and services."""
+    customer = request.user.customer_profile
+    if not customer.vehicles.filter(is_active=True).exists():
+        messages.warning(
+            request,
+            'Add at least one vehicle before booking a service.',
+        )
+        return redirect('customers:portal_vehicle_add')
+
+    if request.method == 'POST':
+        form = CustomerJobBookingForm(customer, request.POST)
+        if form.is_valid():
+            job = Job.objects.create(
+                customer=customer,
+                vehicle=form.cleaned_data['vehicle'],
+                created_by=request.user,
+                priority=form.cleaned_data['priority'],
+                special_instructions=form.cleaned_data.get(
+                    'special_instructions', ''
+                ),
+            )
+            for service in form.cleaned_data['services']:
+                JobService.objects.create(job=job, service=service)
+            job.calculate_totals()
+            messages.success(
+                request,
+                f'Your booking request #{job.id} was submitted. We will confirm shortly.',
+            )
+            return redirect('jobs:detail', pk=job.pk)
+    else:
+        form = CustomerJobBookingForm(customer)
+
+    return render(request, 'customers/book_job.html', {
+        'form': form,
+        'customer': customer,
+    })

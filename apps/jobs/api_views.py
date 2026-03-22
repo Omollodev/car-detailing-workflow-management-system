@@ -126,6 +126,9 @@ def job_detail_api(request, pk):
         'total_price': float(job.total_price),
         'amount_paid': float(job.amount_paid),
         'balance_due': float(job.balance_due),
+        'payment_status': job.payment_status,
+        'payment_status_display': job.get_payment_status_display(),
+        'payment_channel': job.payment_channel,
         'timestamp': timezone.now().isoformat(),
     }
     
@@ -162,7 +165,7 @@ def alerts_api(request):
     for job in pending_extra:
         pending_services = list(
             job.get_pending_services().filter(
-                service__category='extra'
+                service__category__in=['detailing', 'additional'],
             ).values_list('service__name', flat=True)
         )
         alerts.append({

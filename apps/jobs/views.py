@@ -99,7 +99,7 @@ def job_detail_view(request, pk):
             return redirect('customers:portal')
 
     # Forms for various actions
-    status_form = JobStatusChangeForm(initial={'status': job.status})
+    status_form = JobStatusChangeForm(initial={'status': job.status}, job=job)
     assign_form = JobAssignWorkerForm()
     extra_service_form = AddExtraServiceForm()
     
@@ -180,8 +180,25 @@ def job_edit_view(request, pk):
     if request.method == 'POST':
         form = JobEditForm(request.POST, instance=job)
         if form.is_valid():
+            prev_paid = job.amount_paid
+            prev_pay_status = job.payment_status
             form.save()
+            job.refresh_from_db()
             job.calculate_totals()
+            job.refresh_from_db()
+            if (
+                (job.amount_paid != prev_paid or job.payment_status != prev_pay_status)
+                and job.payment_channel == Job.PaymentChannel.CASH
+            ):
+                job.add_timeline_event(
+                    event_type='payment_cash',
+                    description=(
+                        f'Cash / counter payment updated: KES {job.amount_paid} '
+                        f'({job.get_payment_status_display()})'
+                    ),
+                    user=request.user,
+                )
+                job.save(update_fields=['timeline', 'updated_at'])
             messages.success(request, f'Job #{job.id} updated successfully.')
             return redirect('jobs:detail', pk=job.pk)
     else:
@@ -214,17 +231,25 @@ def job_change_status_view(request, pk):
         new_status = form.cleaned_data['status']
         notes = form.cleaned_data.get('notes', '')
         
-        # Check for pending extra services when completing
-        if new_status == 'completed' and job.has_pending_extra_services():
+        # All line-item services must be marked done before completion
+        if new_status == 'completed' and job.has_pending_services():
+            pending_names = list(
+                job.get_pending_services().values_list('service__name', flat=True)
+            )
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
                     'success': False,
-                    'error': 'Cannot complete job with pending extra services.',
-                    'pending_services': list(
-                        job.get_pending_services().values_list('service__name', flat=True)
-                    )
+                    'error': (
+                        'Cannot complete job until every service is marked done. '
+                        'Keep the job In progress or Awaiting extra services.'
+                    ),
+                    'pending_services': pending_names,
                 })
-            messages.error(request, 'Cannot complete job with pending extra services.')
+            messages.error(
+                request,
+                'Cannot complete this job until all services are marked done. '
+                'Leave the job In progress or Awaiting extra services until work is finished.',
+            )
             return redirect('jobs:detail', pk=job.pk)
         
         if job.change_status(new_status, user=request.user, notes=notes):

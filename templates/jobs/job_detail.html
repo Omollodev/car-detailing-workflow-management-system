@@ -44,6 +44,18 @@
     </div>
     {% endif %}
 
+    {% if not user.is_customer and job.has_pending_services %}
+    <div class="alert alert-info">
+        <i class="bi bi-hourglass-split me-2"></i>
+        <strong>Services in progress:</strong> All services must be marked <em>done</em> before the job can move to
+        <strong>Completed</strong>. 
+        <br>
+        {% with pending_count=job.get_pending_services.count %}
+        <small>{{ pending_count }} service{{ pending_count|pluralize }} remaining.</small>
+        {% endwith %}
+    </div>
+    {% endif %}
+
     <div class="row g-3">
         <div class="col-lg-8">
             <div class="card">
@@ -233,27 +245,121 @@
             </div>
 
             <div class="card mt-3">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">Payment</h5>
+                    {% if user.is_manager %}
+                    <a href="{% url 'jobs:edit' job.pk %}" class="btn btn-sm btn-outline-primary">Update payment</a>
+                    {% endif %}
                 </div>
                 <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Total</span>
-                        <span>{{ job.formatted_total_price }}</span>
+                    <!-- Payment Channel and Method Info -->
+                    {% if job.payment_channel != 'unspecified' %}
+                    <div class="mb-3 p-3 bg-light rounded">
+                        <h6 class="mb-2">
+                            <i class="{% if job.payment_channel == 'mpesa' %}bi bi-phone{% else %}bi bi-cash-coin{% endif %} me-2"></i>
+                            {{ job.get_payment_channel_display }}
+                        </h6>
+                        {% if job.payment_channel == 'mpesa' %}
+                        <small class="text-muted">
+                            Customer pays via M-Pesa. Payment updates automatically.
+                            {% if job.mpesa_transaction_id %}
+                            <br>Last transaction: {{ job.mpesa_transaction_id }}
+                            {% endif %}
+                        </small>
+                        {% else %}
+                        <small class="text-muted">
+                            Payment will be recorded when customer pays at the shop.
+                        </small>
+                        {% endif %}
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Paid</span>
-                        <span>KES {{ job.amount_paid|floatformat:2 }}</span>
+                    {% else %}
+                    <div class="alert alert-warning mb-3">
+                        <small><i class="bi bi-exclamation-triangle me-2"></i>Payment method not yet selected by customer.</small>
                     </div>
-                    <div class="d-flex justify-content-between fw-bold">
-                        <span>Balance Due</span>
-                        <span>KES {{ job.balance_due|floatformat:2 }}</span>
+                    {% endif %}
+
+                    <!-- Payment Amount Summary -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between mb-2 p-2 bg-light rounded">
+                                <span class="small text-muted">Total Price</span>
+                                <span class="fw-bold">{{ job.formatted_total_price }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between mb-2 p-2 bg-light rounded">
+                                <span class="small text-muted">Amount Paid</span>
+                                <span class="fw-bold text-success">KES {{ job.amount_paid|floatformat:2 }}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mt-3">
-                        <span class="badge {% if job.payment_status == 'paid' %}bg-success{% elif job.payment_status == 'partial' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                            {{ job.get_payment_status_display }}
+
+                    <!-- Balance Due -->
+                    <div class="d-flex justify-content-between p-2 border rounded mb-3">
+                        <span class="fw-bold">Balance Due</span>
+                        <span class="fw-bold {% if job.balance_due <= 0 %}text-success{% else %}text-danger{% endif %}">
+                            KES {{ job.balance_due|floatformat:2 }}
                         </span>
                     </div>
+
+                    <!-- Payment Status Badge -->
+                    <div class="mb-3">
+                        <span class="badge {% if job.payment_status == 'paid' %}bg-success{% elif job.payment_status == 'partial' %}bg-warning text-dark{% else %}bg-secondary{% endif %} p-2">
+                            <i class="bi bi-check-circle me-1"></i>
+                            {% if job.payment_status == 'paid' %}Fully Paid{% elif job.payment_status == 'partial' %}Partially Paid{% else %}{{ job.get_payment_status_display }}{% endif %}
+                        </span>
+                    </div>
+
+                    <!-- Role-Based Guidance -->
+                    {% if user.is_customer %}
+                        {% if job.balance_due > 0 and job.status != 'completed' and job.status != 'cancelled' %}
+                            {% if job.payment_channel == 'mpesa' %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Ready to pay?</strong> Click the button below to pay via M-Pesa.
+                            </div>
+                            <a href="{% url 'customers:job_pay_mpesa' job_pk=job.pk %}" class="btn btn-success w-100">
+                                <i class="bi bi-phone me-2"></i>Pay KES {{ job.balance_due|floatformat:2 }} with M-Pesa
+                            </a>
+                            {% elif job.payment_channel == 'cash' %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Cash Payment:</strong> Bring KES {{ job.balance_due|floatformat:2 }} when you visit the shop. The manager will record it.
+                            </div>
+                            {% else %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>Choose Payment Method:</strong> Please select how you'd like to pay.
+                            </div>
+                            <a href="{% url 'customers:job_select_payment_method' job.pk %}" class="btn btn-primary w-100">
+                                <i class="bi bi-credit-card me-2"></i>Select Payment Method
+                            </a>
+                            {% endif %}
+                        {% else %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>Payment Complete!</strong> Thank you for your payment.
+                        </div>
+                        {% endif %}
+                    {% elif user.is_worker and not user.is_manager %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Before releasing the vehicle:</strong>
+                        {% if job.payment_status == 'paid' %}
+                        <span class="badge bg-success">✓ Payment received</span> - You can release the vehicle.
+                        {% else %}
+                        <span class="badge bg-warning text-dark">⚠ Not fully paid</span> - Check with manager before releasing.
+                        {% endif %}
+                    </div>
+                    {% elif user.is_manager %}
+                    {% if job.payment_channel == 'cash' and job.balance_due > 0 %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Waiting for cash payment:</strong> Customer owes KES {{ job.balance_due|floatformat:2 }}. 
+                        <a href="{% url 'jobs:edit' job.pk %}" class="alert-link">Record payment here</a>
+                    </div>
+                    {% endif %}
+                    {% endif %}
                 </div>
             </div>
         </div>

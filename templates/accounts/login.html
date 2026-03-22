@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Login - Safi Car Detailing{% endblock %}
+{% block title %}Login - CAR DETAILING SYSTEM WORKFLOW MANAGER {% endblock %}
 
 {% block main_class %}{% endblock %}
 
@@ -15,7 +15,7 @@
                         <div class="text-center mb-4">
                             <img src="{% static 'imgs/carwash-logo.png' %}" alt="Safi Car Detailing" height="64" class="mb-2">
                             <h2 class="mt-2 mb-1">Welcome back</h2>
-                            <p class="text-muted small mb-0">Safi Car Detailing</p>
+                            <p class="text-muted small mb-0">Sign in to your account</p>
                         </div>
                         
                         <form method="post" action="{% url 'accounts:login' %}">
@@ -68,7 +68,7 @@
                     <a href="{% url 'accounts:customer_register' %}" class="text-white">Create a customer account</a>
                 </p>
                 <p class="text-center text-white-50 mt-1">
-                    <small>Workflow Management System</small>
+                    <small> 2026 @ Workflow Management System</small>
                 </p>
             </div>
         </div>

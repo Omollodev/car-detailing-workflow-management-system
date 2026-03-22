@@ -2,6 +2,7 @@
 Forms for job management.
 """
 
+from decimal import Decimal
 from django import forms
 from django.utils import timezone
 from .models import Job, JobService
@@ -23,7 +24,10 @@ class CustomerJobBookingForm(forms.Form):
     services = forms.ModelMultipleChoiceField(
         queryset=Service.objects.filter(
             is_active=True,
-            category=Service.Category.BASIC,
+            category__in=[
+                Service.Category.EXTERIOR,
+                Service.Category.INTERIOR,
+            ],
         ),
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
         label='Services needed',
@@ -48,6 +52,64 @@ class CustomerJobBookingForm(forms.Form):
             customer=customer,
             is_active=True,
         )
+
+
+class CashPaymentRecordingForm(forms.Form):
+    """
+    Manager records a cash payment for a job.
+    """
+    amount_paid = forms.DecimalField(
+        min_value=Decimal('0.01'),
+        max_digits=10,
+        decimal_places=2,
+        label='Amount received (KES)',
+        widget=forms.NumberInput(
+            attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0.01',
+            }
+        ),
+    )
+    payment_status = forms.ChoiceField(
+        choices=[
+            ('partial', 'Partial Payment'),
+            ('paid', 'Fully Paid'),
+        ],
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        label='Payment Status',
+        initial='paid',
+    )
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Notes about this cash payment (optional)',
+            }
+        ),
+        label='Notes',
+    )
+
+    def __init__(self, *args, job=None, **kwargs):
+        self.job = job
+        super().__init__(*args, **kwargs)
+        if job is not None:
+            bal = job.balance_due
+            self.fields['amount_paid'].help_text = (
+                f'Balance due: KES {bal}. Enter the amount received.'
+            )
+            self.fields['amount_paid'].initial = bal
+
+    def clean_amount_paid(self):
+        amount = self.cleaned_data['amount_paid']
+        if self.job is not None and amount > self.job.balance_due + Decimal('1'):
+            # Allow small overpayment margin (1 KES) for rounding
+            raise forms.ValidationError(
+                f'Amount cannot exceed balance due (KES {self.job.balance_due}).'
+            )
+        return amount
 
 
 class JobCreateForm(forms.ModelForm):
@@ -137,11 +199,18 @@ class JobEditForm(forms.ModelForm):
     """
     Form for editing an existing job.
     """
-    
+
     class Meta:
         model = Job
-        fields = ['priority', 'special_instructions', 'internal_notes', 
-                  'discount', 'payment_status', 'amount_paid']
+        fields = [
+            'priority',
+            'special_instructions',
+            'internal_notes',
+            'discount',
+            'payment_channel',
+            'payment_status',
+            'amount_paid',
+        ]
         widgets = {
             'priority': forms.Select(attrs={
                 'class': 'form-select',
@@ -159,6 +228,9 @@ class JobEditForm(forms.ModelForm):
                 'min': '0',
                 'step': '0.01',
             }),
+            'payment_channel': forms.Select(attrs={
+                'class': 'form-select',
+            }),
             'payment_status': forms.Select(attrs={
                 'class': 'form-select',
             }),
@@ -174,11 +246,12 @@ class JobStatusChangeForm(forms.Form):
     """
     Form for changing job status.
     """
+
     status = forms.ChoiceField(
         choices=Job.Status.choices,
         widget=forms.Select(attrs={
             'class': 'form-select',
-        })
+        }),
     )
     notes = forms.CharField(
         required=False,
@@ -186,8 +259,15 @@ class JobStatusChangeForm(forms.Form):
             'class': 'form-control',
             'rows': 2,
             'placeholder': 'Add notes about this status change (optional)',
-        })
+        }),
     )
+
+    def __init__(self, *args, job=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if job is not None and job.has_pending_services():
+            self.fields['status'].choices = [
+                c for c in Job.Status.choices if c[0] != Job.Status.COMPLETED
+            ]
 
 
 class JobAssignWorkerForm(forms.Form):
@@ -212,7 +292,13 @@ class AddExtraServiceForm(forms.Form):
     Form for adding an extra service to an existing job.
     """
     service = forms.ModelChoiceField(
-        queryset=Service.objects.filter(is_active=True, category='extra'),
+        queryset=Service.objects.filter(
+            is_active=True,
+            category__in=[
+                Service.Category.DETAILING,
+                Service.Category.ADDITIONAL,
+            ],
+        ),
         widget=forms.Select(attrs={
             'class': 'form-select',
         }),

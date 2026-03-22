@@ -19,9 +19,7 @@ def service_list_view(request):
     List all services.
     """
     services = Service.objects.all().order_by('category', 'display_order', 'name')
-    basic_services = services.filter(category=Service.Category.BASIC)
-    extra_services = services.filter(category=Service.Category.EXTRA)
-
+    
     services_by_category = {}
     for s in services:
         label = s.get_category_display()
@@ -29,8 +27,6 @@ def service_list_view(request):
 
     return render(request, 'services/service_list.html', {
         'services': services,
-        'basic_services': basic_services,
-        'extra_services': extra_services,
         'services_by_category': services_by_category,
     })
 

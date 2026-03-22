@@ -2,8 +2,85 @@
 Forms for customer and vehicle management.
 """
 
+from decimal import Decimal
+
 from django import forms
+from apps.jobs.models import Job
 from .models import Customer, Vehicle
+
+
+class PaymentMethodSelectionForm(forms.Form):
+    """
+    Customer selects payment method: M-Pesa or Cash.
+    """
+    payment_method = forms.ChoiceField(
+        choices=[
+            ('mpesa', 'M-Pesa (Automatic Payment)'),
+            ('cash', 'Cash at the shop (Manager will record)'),
+        ],
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        label='How would you like to pay?',
+        help_text='Choose your preferred payment method. Once saved, the manager can change this if needed.'
+    )
+
+
+class CustomerMpesaPaymentForm(forms.Form):
+    """
+    Customer records an M-Pesa payment; amounts apply immediately (reconcile with Daraja later).
+    """
+
+    amount = forms.DecimalField(
+        min_value=Decimal('0.01'),
+        max_digits=10,
+        decimal_places=2,
+        label='Amount sent (KES)',
+        widget=forms.NumberInput(
+            attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0.01',
+            }
+        ),
+    )
+    mpesa_phone = forms.CharField(
+        max_length=20,
+        label='M-Pesa phone number',
+        widget=forms.TextInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': '07XX XXX XXX',
+            }
+        ),
+    )
+    mpesa_transaction_id = forms.CharField(
+        max_length=64,
+        label='M-Pesa confirmation code',
+        help_text='The code from your MPESA SMS (e.g. QK1ABC2345).',
+        widget=forms.TextInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Transaction ID',
+            }
+        ),
+    )
+
+    def __init__(self, *args, job=None, **kwargs):
+        self.job = job
+        super().__init__(*args, **kwargs)
+        if job is not None:
+            bal = job.balance_due
+            self.fields['amount'].help_text = (
+                f'Balance due: KES {bal}. You can pay in full or part of this amount.'
+            )
+
+    def clean_amount(self):
+        amount = self.cleaned_data['amount']
+        job = self.job
+        if job is not None and amount > job.balance_due:
+            raise forms.ValidationError(
+                f'Amount cannot exceed balance due (KES {job.balance_due}).'
+            )
+        return amount
 
 
 class CustomerForm(forms.ModelForm):

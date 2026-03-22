@@ -13,6 +13,16 @@ urlpatterns = [
     path('portal/profile/', views.customer_portal_profile_view, name='portal_profile'),
     path('portal/vehicle/add/', views.customer_portal_vehicle_add_view, name='portal_vehicle_add'),
     path('portal/book/', views.customer_book_job_view, name='book_job'),
+    path(
+        'portal/jobs/<int:job_pk>/payment-method/',
+        views.customer_job_select_payment_method_view,
+        name='job_select_payment_method',
+    ),
+    path(
+        'portal/jobs/<int:job_pk>/pay/mpesa/',
+        views.customer_job_mpesa_pay_view,
+        name='job_pay_mpesa',
+    ),
 
     # Customers
     path('', views.customer_list_view, name='list'),

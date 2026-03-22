@@ -11,13 +11,14 @@ class Service(models.Model):
     """
     Represents a service offered by the car detailing business.
     
-    Services are categorized as either 'basic' (standard services) or
-    'extra' (add-on services that customers can request).
+    Services are categorized and have pricing and duration information.
     """
     
     class Category(models.TextChoices):
-        BASIC = 'basic', _('Basic Service')
-        EXTRA = 'extra', _('Extra Service')
+        EXTERIOR = 'exterior', _('Exterior')
+        INTERIOR = 'interior', _('Interior')
+        DETAILING = 'detailing', _('Detailing')
+        ADDITIONAL = 'additional', _('Additional Services')
     
     name = models.CharField(
         max_length=100,
@@ -34,9 +35,9 @@ class Service(models.Model):
     category = models.CharField(
         max_length=20,
         choices=Category.choices,
-        default=Category.BASIC,
+        default=Category.EXTERIOR,
         verbose_name=_('Category'),
-        help_text=_('Basic services are standard, Extra services are add-ons')
+        help_text=_('Service category')
     )
     
     price = models.DecimalField(
@@ -83,16 +84,6 @@ class Service(models.Model):
         return f"{self.name} ({self.get_category_display()}) - KES {self.price}"
     
     @property
-    def is_basic(self) -> bool:
-        """Check if this is a basic service."""
-        return self.category == self.Category.BASIC
-    
-    @property
-    def is_extra(self) -> bool:
-        """Check if this is an extra service."""
-        return self.category == self.Category.EXTRA
-    
-    @property
     def formatted_price(self) -> str:
         """Return price formatted as KES currency."""
         return f"KES {self.price:,.2f}"
@@ -107,16 +98,6 @@ class Service(models.Model):
                 return f"{hours}h {minutes}m"
             return f"{hours}h"
         return f"{self.estimated_duration}m"
-    
-    @classmethod
-    def get_active_basic_services(cls):
-        """Return all active basic services."""
-        return cls.objects.filter(is_active=True, category=cls.Category.BASIC)
-    
-    @classmethod
-    def get_active_extra_services(cls):
-        """Return all active extra services."""
-        return cls.objects.filter(is_active=True, category=cls.Category.EXTRA)
     
     @classmethod
     def get_all_active_services(cls):

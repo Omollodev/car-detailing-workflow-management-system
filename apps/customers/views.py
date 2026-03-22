@@ -19,6 +19,8 @@ from .forms import (
     VehicleForm,
     QuickCustomerVehicleForm,
     CustomerPortalProfileForm,
+    CustomerMpesaPaymentForm,
+    PaymentMethodSelectionForm,
 )
 
 
@@ -378,11 +380,104 @@ def customer_book_job_view(request):
                 request,
                 f'Your booking request #{job.id} was submitted. We will confirm shortly.',
             )
-            return redirect('jobs:detail', pk=job.pk)
+            # Redirect to payment method selection
+            return redirect('customers:job_select_payment_method', job_pk=job.pk)
     else:
         form = CustomerJobBookingForm(customer)
 
     return render(request, 'customers/book_job.html', {
         'form': form,
         'customer': customer,
+    })
+
+
+@login_required
+@customer_required
+def customer_job_select_payment_method_view(request, job_pk):
+    """
+    Customer selects payment method (M-Pesa or Cash) for their job.
+    """
+    customer = request.user.customer_profile
+    job = get_object_or_404(
+        Job.objects.select_related('customer', 'vehicle'),
+        pk=job_pk,
+        customer=customer,
+    )
+
+    if request.method == 'POST':
+        form = PaymentMethodSelectionForm(request.POST)
+        if form.is_valid():
+            payment_method = form.cleaned_data['payment_method']
+            
+            # Set payment channel based on selection
+            if payment_method == 'mpesa':
+                job.payment_channel = Job.PaymentChannel.MPESA
+                job.save(update_fields=['payment_channel'])
+                messages.success(
+                    request,
+                    f'Payment method set to M-Pesa. Proceed to pay when ready.',
+                )
+                # For M-Pesa, show M-Pesa payment form next
+                return redirect('customers:job_pay_mpesa', job_pk=job.pk)
+            else:  # cash
+                job.payment_channel = Job.PaymentChannel.CASH
+                job.save(update_fields=['payment_channel'])
+                messages.info(
+                    request,
+                    f'Payment method set to Cash. The manager will record your payment when you visit the shop.',
+                )
+                # For Cash, just return to job detail
+                return redirect('jobs:detail', pk=job.pk)
+    else:
+        form = PaymentMethodSelectionForm()
+
+    return render(request, 'customers/job_select_payment_method.html', {
+        'form': form,
+        'job': job,
+        'customer': customer,
+    })
+
+
+@login_required
+@customer_required
+def customer_job_mpesa_pay_view(request, job_pk):
+    """
+    Record M-Pesa payment from the customer portal (immediate balance update).
+    Cash payments are recorded by a manager on the job edit page.
+    """
+    customer = request.user.customer_profile
+    job = get_object_or_404(
+        Job.objects.select_related('customer', 'vehicle'),
+        pk=job_pk,
+        customer=customer,
+    )
+
+    if job.balance_due <= 0:
+        messages.info(request, 'This job has no balance due.')
+        return redirect('jobs:detail', pk=job.pk)
+
+    if job.status in ('completed', 'cancelled'):
+        messages.warning(request, 'Online payment is not available for this job.')
+        return redirect('jobs:detail', pk=job.pk)
+
+    if request.method == 'POST':
+        form = CustomerMpesaPaymentForm(request.POST, job=job)
+        if form.is_valid():
+            job.apply_mpesa_payment(
+                form.cleaned_data['amount'],
+                phone=form.cleaned_data['mpesa_phone'],
+                transaction_id=form.cleaned_data['mpesa_transaction_id'],
+                user=request.user,
+            )
+            messages.success(
+                request,
+                'M-Pesa payment recorded. Thank you! Staff may verify the transaction if needed.',
+            )
+            return redirect('jobs:detail', pk=job.pk)
+    else:
+        form = CustomerMpesaPaymentForm(job=job)
+
+    return render(request, 'customers/job_pay_mpesa.html', {
+        'form': form,
+        'job': job,
     })

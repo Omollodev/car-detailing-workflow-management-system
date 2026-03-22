@@ -7,7 +7,7 @@ from pathlib import Path
 def create_initial_data():
     """Create initial data for the application."""
     from django.contrib.auth import get_user_model
-    from apps.services.models import ServiceCategory, Service
+    from apps.services.models import Service
     
     User = get_user_model()
     
@@ -50,16 +50,21 @@ def create_initial_data():
         ]
     }
     
+    category_mapping = {
+        'Exterior': 'exterior',
+        'Interior': 'interior', 
+        'Detailing': 'detailing',
+        'Additional Services': 'additional'
+    }
+    
     for category_name, services in categories_data.items():
-        category, created = ServiceCategory.objects.get_or_create(name=category_name)
-        if created:
-            print(f"Created category: {category_name}")
+        category_value = category_mapping[category_name]
         
         for service_name, price, duration, description in services:
             service, created = Service.objects.get_or_create(
                 name=service_name,
                 defaults={
-                    'category': category,
+                    'category': category_value,
                     'price': price,
                     'estimated_duration': duration,
                     'description': description
@@ -77,6 +82,9 @@ def create_initial_data():
 
 def main():
     """Run administrative tasks."""
+    # Add project root to Python path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
     
     # Check for setup command

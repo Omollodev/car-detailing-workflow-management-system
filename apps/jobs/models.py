@@ -36,6 +36,12 @@ class Job(models.Model):
         PARTIAL = 'partial', _('Partial Payment')
         PAID = 'paid', _('Paid')
         REFUNDED = 'refunded', _('Refunded')
+
+    class PaymentChannel(models.TextChoices):
+        """How payment is recorded; M-Pesa updates from customer portal; cash from manager."""
+        UNSPECIFIED = 'unspecified', _('Not set')
+        MPESA = 'mpesa', _('M-Pesa')
+        CASH = 'cash', _('Cash')
     
     # Relationships
     customer = models.ForeignKey(
@@ -148,7 +154,29 @@ class Job(models.Model):
         default=Decimal('0.00'),
         verbose_name=_('Amount Paid (KES)')
     )
-    
+
+    payment_channel = models.CharField(
+        max_length=20,
+        choices=PaymentChannel.choices,
+        default=PaymentChannel.UNSPECIFIED,
+        verbose_name=_('Payment channel'),
+        help_text=_('M-Pesa when customer pays online; cash when manager records payment'),
+    )
+
+    mpesa_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name=_('M-Pesa phone'),
+        help_text=_('Phone used for the last M-Pesa payment'),
+    )
+
+    mpesa_transaction_id = models.CharField(
+        max_length=64,
+        blank=True,
+        verbose_name=_('M-Pesa confirmation'),
+        help_text=_('MPESA transaction code or reference'),
+    )
+
     # Duration tracking
     estimated_duration = models.PositiveIntegerField(
         default=0,
@@ -254,6 +282,31 @@ class Job(models.Model):
         }
         return new_status in allowed_transitions.get(self.status, [])
     
+    def can_be_completed(self) -> bool:
+        """
+        Check if job can be marked as completed.
+        Job can only be completed when ALL services are marked as done.
+        """
+        if not self.can_transition_to('completed'):
+            return False
+        return not self.has_pending_services()
+    
+    def get_completion_blockers(self) -> list:
+        """
+        Return list of reasons why job cannot be completed.
+        Useful for displaying error messages to users.
+        """
+        blockers = []
+        
+        if not self.can_transition_to('completed'):
+            blockers.append(f"Cannot transition from '{self.get_status_display()}' to Completed")
+        
+        if self.has_pending_services():
+            pending_count = self.get_pending_services().count()
+            blockers.append(f"{pending_count} service(s) still pending. Mark all services as complete first.")
+        
+        return blockers
+    
     def change_status(self, new_status: str, user=None, notes: str = '') -> bool:
         """
         Change job status with validation and timeline tracking.
@@ -263,9 +316,9 @@ class Job(models.Model):
         if not self.can_transition_to(new_status):
             return False
         
-        # Check completion requirements
+        # Completion requires every line-item service marked done (not only extras)
         if new_status == 'completed':
-            if self.has_pending_extra_services():
+            if self.has_pending_services():
                 return False
         
         old_status = self.status
@@ -306,10 +359,10 @@ class Job(models.Model):
     # ==================== Service Methods ====================
     
     def has_pending_extra_services(self) -> bool:
-        """Check if job has any incomplete extra services."""
+        """Check if job has any incomplete extra (detailing/additional) services."""
         return self.jobservice_set.filter(
-            service__category='extra',
-            is_completed=False
+            service__category__in=['detailing', 'additional'],
+            is_completed=False,
         ).exists()
     
     def has_pending_services(self) -> bool:
@@ -324,13 +377,13 @@ class Job(models.Model):
         """Return all completed services for this job."""
         return self.jobservice_set.filter(is_completed=True)
     
-    def get_extra_services(self):
-        """Return all extra services for this job."""
-        return self.jobservice_set.filter(service__category='extra')
-    
     def get_basic_services(self):
-        """Return all basic services for this job."""
-        return self.jobservice_set.filter(service__category='basic')
+        """Return all basic services for this job (exterior and interior)."""
+        return self.jobservice_set.filter(service__category__in=['exterior', 'interior'])
+    
+    def get_extra_services(self):
+        """Return all extra services for this job (detailing and additional)."""
+        return self.jobservice_set.filter(service__category__in=['detailing', 'additional'])
     
     def calculate_totals(self):
         """Calculate and update estimated price and duration from services."""
@@ -390,7 +443,103 @@ class Job(models.Model):
     def is_fully_paid(self) -> bool:
         """Check if job is fully paid."""
         return self.amount_paid >= self.total_price
-    
+
+    def apply_mpesa_payment(
+        self,
+        amount: Decimal,
+        *,
+        phone: str = '',
+        transaction_id: str = '',
+        user=None,
+    ) -> None:
+        """
+        Add an M-Pesa amount from the customer portal and sync payment_status.
+        Caps amount_paid at total_price. Records timeline event.
+        """
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            return
+        balance = max(self.total_price - self.amount_paid, Decimal('0.00'))
+        applied = min(amount, balance)
+        self.amount_paid = self.amount_paid + applied
+        if self.amount_paid >= self.total_price:
+            self.payment_status = self.PaymentStatus.PAID
+            self.amount_paid = self.total_price
+        else:
+            self.payment_status = self.PaymentStatus.PARTIAL
+        self.payment_channel = self.PaymentChannel.MPESA
+        if phone:
+            self.mpesa_phone = phone.strip()[:20]
+        if transaction_id:
+            self.mpesa_transaction_id = transaction_id.strip()[:64]
+        self.add_timeline_event(
+            event_type='payment_mpesa',
+            description=(
+                f'M-Pesa payment recorded: KES {applied} '
+                f'(balance KES {self.balance_due})'
+            ),
+            user=user,
+            notes=transaction_id or phone or '',
+        )
+        self.save(
+            update_fields=[
+                'amount_paid',
+                'payment_status',
+                'payment_channel',
+                'mpesa_phone',
+                'mpesa_transaction_id',
+                'timeline',
+                'updated_at',
+            ]
+        )
+
+    def apply_cash_payment(
+        self,
+        amount: Decimal,
+        *,
+        payment_status: str = 'paid',
+        user=None,
+        notes: str = '',
+    ) -> None:
+        """
+        Record a cash payment from the manager and update payment_status.
+        Caps amount_paid at total_price. Records timeline event.
+        """
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            return
+        balance = max(self.total_price - self.amount_paid, Decimal('0.00'))
+        applied = min(amount, balance)
+        self.amount_paid = self.amount_paid + applied
+        
+        # Set payment status based on whether balance is fully covered
+        if self.amount_paid >= self.total_price:
+            self.payment_status = self.PaymentStatus.PAID
+            self.amount_paid = self.total_price
+        else:
+            self.payment_status = payment_status or self.PaymentStatus.PARTIAL
+        
+        self.payment_channel = self.PaymentChannel.CASH
+        
+        self.add_timeline_event(
+            event_type='payment_cash',
+            description=(
+                f'Cash payment recorded: KES {applied} '
+                f'(Balance: KES {self.balance_due})'
+            ),
+            user=user,
+            notes=notes,
+        )
+        self.save(
+            update_fields=[
+                'amount_paid',
+                'payment_status',
+                'payment_channel',
+                'timeline',
+                'updated_at',
+            ]
+        )
+
     # ==================== Duration Methods ====================
     
     @property

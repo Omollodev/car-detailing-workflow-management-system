@@ -44,8 +44,12 @@ class JobAdmin(admin.ModelAdmin):
         ('Instructions', {
             'fields': ('special_instructions', 'internal_notes')
         }),
-        ('Pricing', {
-            'fields': ('estimated_price', 'discount', 'total_price', 'payment_status', 'amount_paid')
+        ('Pricing & payment', {
+            'fields': (
+                'estimated_price', 'discount', 'total_price',
+                'payment_channel', 'payment_status', 'amount_paid',
+                'mpesa_phone', 'mpesa_transaction_id',
+            )
         }),
         ('Timing', {
             'fields': ('estimated_duration', 'actual_duration', 'created_at', 'started_at', 'completed_at')

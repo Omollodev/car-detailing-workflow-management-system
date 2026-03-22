@@ -35,13 +35,13 @@ class JobModelTests(TestCase):
             name="Full Wash",
             price=Decimal("500.00"),
             estimated_duration=30,
-            category="basic",
+            category="exterior",
         )
         self.service_extra = Service.objects.create(
             name="Engine Wash",
             price=Decimal("800.00"),
             estimated_duration=40,
-            category="extra",
+            category="detailing",
         )
         self.worker_user = User.objects.create_user(
             username="worker",
@@ -67,14 +67,40 @@ class JobModelTests(TestCase):
         self.assertEqual(self.job.estimated_duration, 70)
 
     def test_has_pending_extra_services_true(self):
-        """Job.has_pending_extra_services should detect incomplete extras."""
+        """Job.has_pending_extra_services should detect incomplete detailing/additional services."""
         self.assertTrue(self.job.has_pending_extra_services())
 
-    def test_change_status_blocks_completion_with_pending_extras(self):
-        """Jobs cannot be completed while extra services are pending."""
+    def test_change_status_blocks_completion_with_any_pending_service(self):
+        """Jobs cannot be completed until every service line is marked done."""
+        self.assertTrue(self.job.change_status("in_progress", user=self.user))
         can_change = self.job.change_status("completed", user=self.user)
         self.assertFalse(can_change)
         self.assertNotEqual(self.job.status, "completed")
+
+    def test_change_status_allows_completion_when_all_services_done(self):
+        """After all services are completed, job may move to completed."""
+        self.assertTrue(self.job.change_status("in_progress", user=self.user))
+        for js in self.job.jobservice_set.all():
+            js.mark_complete(user=self.user)
+        self.assertTrue(self.job.change_status("completed", user=self.user))
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.status, "completed")
+
+    def test_apply_mpesa_payment_updates_balance(self):
+        """M-Pesa payment from model should increase amount_paid and set channel."""
+        self.job.calculate_totals()
+        self.job.refresh_from_db()
+        self.assertGreater(self.job.total_price, 0)
+        self.job.apply_mpesa_payment(
+            self.job.total_price,
+            phone="0712345678",
+            transaction_id="TEST123",
+            user=self.user,
+        )
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.payment_status, "paid")
+        self.assertEqual(self.job.payment_channel, "mpesa")
+        self.assertEqual(self.job.amount_paid, self.job.total_price)
 
     def test_change_status_valid_transition(self):
         """Valid status transitions should succeed and update status."""
@@ -107,7 +133,7 @@ class JobViewsTests(TestCase):
             name="Quick Wash",
             price=Decimal("300.00"),
             estimated_duration=20,
-            category="basic",
+            category="exterior",
         )
         self.client.login(username="manager", password="testpass123")
 

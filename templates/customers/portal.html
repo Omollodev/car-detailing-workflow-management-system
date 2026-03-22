@@ -72,6 +72,7 @@
                             <th>Job</th>
                             <th>Vehicle</th>
                             <th>Status</th>
+                            <th>Payment</th>
                             <th>When</th>
                             <th></th>
                         </tr>
@@ -82,6 +83,18 @@
                             <td class="fw-medium">#{{ job.id }}</td>
                             <td>{{ job.vehicle.plate_number }}</td>
                             <td><span class="badge {{ job.status_badge_class }}">{{ job.get_status_display }}</span></td>
+                            <td>
+                                <span class="badge {% if job.payment_status == 'paid' %}bg-success{% elif job.payment_status == 'partial' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ job.get_payment_status_display }}
+                                </span>
+                                {% if job.balance_due > 0 and job.status != 'completed' and job.status != 'cancelled' %}
+                                    {% if job.payment_channel == 'mpesa' %}
+                                    <a class="btn btn-sm btn-success ms-1" href="{% url 'customers:job_pay_mpesa' job_pk=job.pk %}">Pay M-Pesa</a>
+                                    {% elif job.payment_channel == 'unspecified' %}
+                                    <a class="btn btn-sm btn-warning ms-1" href="{% url 'customers:job_select_payment_method' job.pk %}">Choose method</a>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
                             <td class="text-muted small">{{ job.created_at|naturaltime }}</td>
                             <td><a class="btn btn-sm btn-outline-secondary" href="{% url 'jobs:detail' job.pk %}">View</a></td>
                         </tr>

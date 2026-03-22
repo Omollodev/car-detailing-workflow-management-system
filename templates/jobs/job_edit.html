@@ -22,12 +22,19 @@
                     <small class="text-muted">{{ job.vehicle.plate_number }} · {{ job.customer.name }}</small>
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-secondary small mb-4">
+                        <strong>Cash / counter payments:</strong> set <em>Payment channel</em> to <strong>Cash</strong>,
+                        then update <em>Amount paid</em> and <em>Payment status</em>. This is recorded on the job timeline.
+                        <span class="d-block mt-1 text-muted">M-Pesa payments from customers are applied automatically when they use “Pay with M-Pesa” in their portal.</span>
+                    </div>
                     <form method="post" novalidate>
                         {% csrf_token %}
                         <div class="row g-3">
                             <div class="col-md-6">{{ form.priority|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.payment_status|as_crispy_field }}</div>
                             <div class="col-md-6">{{ form.discount|as_crispy_field }}</div>
+                            <div class="col-12"><hr class="my-1"><h6 class="text-muted small text-uppercase">Payment (manager)</h6></div>
+                            <div class="col-md-6">{{ form.payment_channel|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.payment_status|as_crispy_field }}</div>
                             <div class="col-md-6">{{ form.amount_paid|as_crispy_field }}</div>
                             <div class="col-12">{{ form.special_instructions|as_crispy_field }}</div>
                             <div class="col-12">{{ form.internal_notes|as_crispy_field }}</div>

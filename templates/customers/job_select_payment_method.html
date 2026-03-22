@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Select Payment Method - Safi Car Detailing{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'customers:portal' %}">My dashboard</a></li>
+            <li class="breadcrumb-item active">Payment Method</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary">
+                    <h4 class="mb-0 text-white">
+                        <i class="bi bi-credit-card me-2"></i>Select Payment Method
+                    </h4>
+                    <small class="text-white-50">Job #{{ job.id }} · {{ job.vehicle.plate_number }}</small>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Job Amount:</strong> {{ job.formatted_total_price }}
+                    </div>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <fieldset>
+                            <legend class="mb-3">How would you like to pay?</legend>
+                            
+                            {% for radio in form.payment_method %}
+                            <div class="form-check mb-4">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                    <strong>{{ radio.choice_label }}</strong>
+                                </label>
+                                
+                                {% if radio.choice_value == 'mpesa' %}
+                                <small class="d-block text-muted ms-4 mt-1">
+                                    <i class="bi bi-phone"></i> Pay instantly via M-Pesa from your phone. Your payment will be recorded immediately.
+                                </small>
+                                {% else %}
+                                <small class="d-block text-muted ms-4 mt-1">
+                                    <i class="bi bi-cash-coin"></i> Pay with cash when you come to the shop. The manager will record your payment.
+                                </small>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+
+                            {% if form.payment_method.errors %}
+                            <div class="alert alert-danger mt-2">
+                                {{ form.payment_method.errors }}
+                            </div>
+                            {% endif %}
+                        </fieldset>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'jobs:detail' job.pk %}" class="btn btn-outline-secondary">Back to job</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Continue to Payment
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr class="my-4">
+                    
+                    <div class="alert alert-light border">
+                        <h6 class="mb-3"><i class="bi bi-key me-2"></i>Why are we asking this?</h6>
+                        <ul class="small mb-0">
+                            <li><strong>M-Pesa:</strong> You can pay instantly online, and we'll update the payment status right away.</li>
+                            <li><strong>Cash:</strong> If you prefer to pay cash at the shop, just let us know. No action needed now — we'll record it when you visit.</li>
+                            <li>You can change this choice anytime before the job is completed.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Job Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted text-uppercase small">Vehicle</h6>
+                            <div class="fw-medium">{{ job.vehicle.full_description }}</div>
+                            <div class="text-muted small">{{ job.vehicle.plate_number }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted text-uppercase small">Services</h6>
+                            <div class="small">
+                                {{ job.jobservice_set.count }} service{{ job.jobservice_set.count|pluralize }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

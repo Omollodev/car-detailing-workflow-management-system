@@ -35,7 +35,7 @@ ALLOWED_HOSTS = _parse_csv_env(
     'localhost,127.0.0.1,car-detailing-workflow-management-system-hdep.onrender.com'
 )
 CSRF_TRUSTED_ORIGINS = _parse_csv_env(
-    'CSRF_TRUSTED_ORIGINS','https://localhost','https://127.0.0.1','https://car-detailing-workflow-management-system-hdep.onrender.com/'
+    'CSRF_TRUSTED_ORIGINS','https://localhost,https://127.0.0.1,https://car-detailing-workflow-management-system-hdep.onrender.com/'
 )
 
 # Application definition

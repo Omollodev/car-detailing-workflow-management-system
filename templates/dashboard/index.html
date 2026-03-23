@@ -153,7 +153,7 @@
                 <span><i class="bi bi-exclamation-triangle me-2"></i>Awaiting Extra</span>
                 <span class="badge bg-dark" id="count-awaiting"> {{ awaiting_extra_jobs|length }}</span>
             </div>
-            <div class="card-body p-2 kanban-column" id="column-awaiting" style="max-height: 250px; overflow-y: auto;">
+            <div class="card-body p-2 kanban-column" id="column-awaiting" style="max-height: 500px; overflow-y: auto;">
                 {% for job in awaiting_extra_jobs %}
                 {% include "jobs/_job_card.html" %}
                 {% empty %}

@@ -6,17 +6,16 @@
 {% block main_class %}{% endblock %}
 
 {% block content %}
-<div class="min-vh-100 d-flex align-items-center justify-content-center bg-primary">
+<div class="auth-page d-flex align-items-center justify-content-center">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-5 col-lg-4">
-                <div class="card shadow-lg border-0">
-                    <div class="card-body p-5">
-                        <div class="text-center mb-4">
-                            <img src="{% static 'imgs/carwash-logo.png' %}" alt="Safi Car Detailing" height="64" class="mb-2">
-                            <h2 class="mt-2 mb-1">Welcome back</h2>
-                            <p class="text-muted small mb-0">Sign in to your account</p>
-                        </div>
+            <div class="col-md-6 col-lg-5">
+                <div class="card auth-card">
+                    <div class="card-body text-center">
+                        <img src="{% static 'imgs/carwash.png' %}" alt="Safi Car Detailing" class="auth-logo mb-3">
+                        <h1 class="auth-title mb-2">Sign in to manage the carwash</h1>
+                        <p class="auth-subtitle mb-4">Fast, easy and beautiful workflow control for your team.</p>
+                        <div class="text-start">
                         
                         <form method="post" action="{% url 'accounts:login' %}">
                             {% csrf_token %}
@@ -60,15 +59,19 @@
                                 <i class="bi bi-box-arrow-in-right me-2"></i>
                                 Sign In
                             </button>
+                            <a href="{% url 'dashboard:landing' %}" class="btn btn-outline-secondary w-100 mt-2 py-2">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                Go to Home
+                            </a>
                         </form>
                     </div>
                 </div>
                 
-                <p class="text-center text-white-50 mt-3 mb-1">
-                    <a href="{% url 'accounts:customer_register' %}" class="text-white">Create a customer account</a>
+                <p class="text-center mt-3 mb-1">
+                    <a href="{% url 'accounts:customer_register' %}" class="auth-footer-link">Create a customer account</a>
                 </p>
-                <p class="text-center text-white-50 mt-1">
-                    <small> 2026 @ Workflow Management System</small>
+                <p class="text-center text-muted mt-1">
+                    <small>2026 © Workflow Management System</small>
                 </p>
             </div>
         </div>

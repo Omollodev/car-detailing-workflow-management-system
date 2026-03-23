@@ -12,6 +12,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <link rel="icon" href="{% static 'imgs/carwash.png' %}" type="image/png">
     {% block extra_css %}{% endblock %}
 </head>
 <body{% if user.is_authenticated and not user.is_customer %} data-staff-notification-poll="1"{% endif %}>
@@ -20,8 +21,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center gap-2" href="{% if user.is_customer %}{% url 'customers:portal' %}{% else %}{% url 'dashboard:index' %}{% endif %}">
-                <img src="{% static 'imgs/carwash-logo.png' %}" alt="Safi Car Detailing" height="36" class="d-inline-block">
-                <span class="d-none d-sm-inline">Safi Car Detailing</span>
+                <img src="{% static 'imgs/carwash.png' %}" alt="Car Detailing" height="36" class="d-inline-block">
+                <span class="d-none d-sm-inline">Car Detailing System</span>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -33,7 +34,7 @@
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'portal' %}active{% endif %}" href="{% url 'customers:portal' %}">
-                            <i class="bi bi-house-door me-1"></i> My dashboard
+                            <i class="bi bi-house-door me-1"></i> Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
@@ -191,7 +192,7 @@
             <div class="row align-items-center">
                 <div class="col-md-6">
                     <small class="text-muted">
-                        Safi Car Detailing Workflow System &copy; {% now "Y" %}
+                        Carwash Detailing Workflow System &copy; {% now "Y" %}
                     </small>
                 </div>
                 <div class="col-md-6 text-md-end">

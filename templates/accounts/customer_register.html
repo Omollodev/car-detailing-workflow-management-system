@@ -6,16 +6,16 @@
 {% block main_class %}{% endblock %}
 
 {% block content %}
-<div class="min-vh-100 d-flex align-items-center justify-content-center bg-primary py-5">
+<div class="auth-page d-flex align-items-center justify-content-center">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6">
-                <div class="card shadow-lg border-0">
-                    <div class="card-body p-4 p-md-5">
+                <div class="card auth-card">
+                    <div class="card-body">
                         <div class="text-center mb-4">
-                            <img src="{% static 'imgs/carwash-logo.png' %}" alt="Safi Car Detailing" height="56" class="mb-3">
-                            <h2 class="h4 mb-1">Customer registration</h2>
-                            <p class="text-muted small mb-0">Staff accounts are created by your manager. This form is for customers only.</p>
+                            <img src="{% static 'imgs/carwash.png' %}" alt="Safi Car Detailing" class="auth-logo mb-3">
+                            <h1 class="auth-title mb-2">Sign up to manage a carwash..</h1>
+                            <p class="auth-subtitle mb-4">Create a customer profile and start booking services instantly.</p>
                         </div>
 
                         <form method="post" novalidate>
@@ -74,7 +74,7 @@
                         </form>
 
                         <p class="text-center text-muted small mt-4 mb-0">
-                            Already have an account? <a href="{% url 'accounts:login' %}">Sign in</a>
+                            Already have an account? <a href="{% url 'accounts:login' %}" class="auth-footer-link">Sign in</a>
                         </p>
                     </div>
                 </div>

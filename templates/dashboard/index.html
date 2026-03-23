@@ -7,7 +7,7 @@
 <div class="row mb-4">
     <div class="col">
         <h1 class="h3 mb-0">Dashboard</h1>
-        <p class="text-muted"> 📅 {{ today|date:"l, F j, Y" }}</p>
+        <p class="text-muted"> {{ today|date:"l, F j, Y" }}</p>
     </div>
     <div class="col-auto">
         <a href="{% url 'jobs:create' %}" class="btn btn-primary">
@@ -111,7 +111,7 @@
 
 <!-- Kanban Board -->
 <div class="row g-3" id="kanban-board">
-    <h2 class="h4 mb-3">📋 Live Kanban Board</h2>
+    <h2 class="h4 mb-3"> Live Kanban Board</h2>
     <!-- Waiting Column -->
     <div class="col-md-6 col-lg-3">
         <div class="card h-100">
@@ -151,7 +151,7 @@
         <div class="card h-100">
             <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-exclamation-triangle me-2"></i>Awaiting Extra</span>
-                <span class="badge bg-dark" id="count-awaiting"> ⚠️ {{ awaiting_extra_jobs|length }}</span>
+                <span class="badge bg-dark" id="count-awaiting"> {{ awaiting_extra_jobs|length }}</span>
             </div>
             <div class="card-body p-2 kanban-column" id="column-awaiting" style="max-height: 500px; overflow-y: auto;">
                 {% for job in awaiting_extra_jobs %}
@@ -168,7 +168,7 @@
         <div class="card h-100">
             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-check-circle me-2"></i>Completed Today</span>
-                <span class="badge bg-white text-success" id="count-completed"> ✅ {{ completed_jobs|length }}</span>
+                <span class="badge bg-white text-success" id="count-completed"> {{ completed_jobs|length }}</span>
             </div>
             <div class="card-body p-2 kanban-column" id="column-completed" style="max-height: 500px; overflow-y: auto;">
                 {% for job in completed_jobs %}
@@ -186,7 +186,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <i class="bi bi-person-badge me-2"></i> 👤 Available Workers
+                <i class="bi bi-person-badge me-2"></i> Available Workers
             </div>
             <div class="card-body">
                 {% if available_workers %}

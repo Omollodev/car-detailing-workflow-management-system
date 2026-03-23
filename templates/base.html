@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ BUSINESS_NAME|default:"Safi Car Detailing" }}{% endblock %}</title>
+    <title>{% block title %}{{ BUSINESS_NAME|default:"Carwash Detailing" }}{% endblock %}</title>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -15,7 +15,7 @@
     <link rel="icon" href="{% static 'imgs/carwash.png' %}" type="image/png">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="d-flex flex-column min-vh-100"{% if user.is_authenticated and not user.is_customer %} data-staff-notification-poll="1"{% endif %}>
+<body class="d-flex flex-column min-vh-100" data-ajax-polling-interval="{{ AJAX_POLLING_INTERVAL|default:30000 }}"{% if user.is_authenticated and not user.is_customer %} data-staff-notification-poll="1"{% endif %}>
     {% if user.is_authenticated %}
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
@@ -186,16 +186,15 @@
     </main>
     
     <!-- Footer -->
-    {% if user.is_authenticated %}
     <footer class="bg-light py-3 mt-auto">
         <div class="container-fluid">
             <div class="row align-items-center">
-                <div class="col-md-6">
+                <div class="col-12 col-md-6 text-center text-md-start">
                     <small class="text-muted">
-                        Carwash Detailing Workflow System &copy; {% now "Y" %}
+                        Car Detailing Workflow System &copy; {% now "Y" %}
                     </small>
                 </div>
-                <div class="col-md-6 text-md-end">
+                <div class="col-12 col-md-6 text-center text-md-end mt-2 mt-md-0">
                     <small class="text-muted">
                         <span id="last-updated">Last updated: --:--</span>
                     </small>
@@ -203,15 +202,14 @@
             </div>
         </div>
     </footer>
-    {% endif %}
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- AJAX Polling Configuration -->
     <script>
-        const POLLING_INTERVAL = {{ AJAX_POLLING_INTERVAL|default:30000 }};
-        const CSRF_TOKEN = '{{ csrf_token }}';
+        // Read polling interval from <body data-ajax-polling-interval="..."> to avoid template syntax in JS.
+        window.POLLING_INTERVAL = Number(document.body.dataset.ajaxPollingInterval || 30000);
     </script>
     
     <!-- Custom JavaScript -->

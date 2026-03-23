@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - DetailFlow{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">{{ title }}</h1>
+            <p class="text-muted mb-0">Update worker profile settings and availability.</p>
+        </div>
+        <a href="{% url 'workers:detail' worker.pk %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" novalidate class="worker-form">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.employee_id.id_for_label }}" class="form-label">{{ form.employee_id.label }}</label>
+                            {{ form.employee_id }}
+                            {% if form.employee_id.errors %}
+                                <div class="text-danger small mt-1">{{ form.employee_id.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.hired_date.id_for_label }}" class="form-label">{{ form.hired_date.label }}</label>
+                            {{ form.hired_date }}
+                            {% if form.hired_date.errors %}
+                                <div class="text-danger small mt-1">{{ form.hired_date.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label d-block">{{ form.skills.label }}</label>
+                            <div class="worker-skills-grid">
+                                {% for skill in form.skills.field.queryset %}
+                                    <div class="skill-checkbox-item">
+                                        <input type="checkbox" 
+                                               name="skills" 
+                                               value="{{ skill.id }}" 
+                                               id="skill_{{ skill.id }}"
+                                               {% if skill.id in form.skills.value %}checked{% endif %}>
+                                        <label for="skill_{{ skill.id }}">{{ skill.name }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.skills.errors %}
+                                <div class="text-danger small mt-1">{{ form.skills.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-check mb-3">
+                            {{ form.is_available }}
+                            <label class="form-check-label" for="{{ form.is_available.id_for_label }}">
+                                {{ form.is_available.label }}
+                            </label>
+                            {% if form.is_available.errors %}
+                                <div class="text-danger small mt-1">{{ form.is_available.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">{{ form.notes.label }}</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger small mt-1">{{ form.notes.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'workers:detail' worker.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check2 me-1"></i> Save changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

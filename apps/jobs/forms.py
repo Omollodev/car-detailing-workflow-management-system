@@ -22,13 +22,7 @@ class CustomerJobBookingForm(forms.Form):
         label='Vehicle',
     )
     services = forms.ModelMultipleChoiceField(
-        queryset=Service.objects.filter(
-            is_active=True,
-            category__in=[
-                Service.Category.EXTERIOR,
-                Service.Category.INTERIOR,
-            ],
-        ),
+        queryset=Service.objects.filter(is_active=True).order_by('category', 'display_order', 'name'),
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
         label='Services needed',
     )

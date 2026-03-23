@@ -6,7 +6,7 @@
     --primary-hover: #0f5e70;
     --secondary: #9ca3af;
     --success: #10b981;
-    --warning: #f59e0b;
+    --warning: #866b3c;
     --danger: #ef4444;
     --info: #3b82f6;
     --light: #f9fafb;
@@ -33,6 +33,16 @@ html, body {
     background: radial-gradient(circle at 30% 10%, #0d2d32 0%, #05181d 50%, #021217 100%);
     color: var(--text-primary);
     min-height: 100vh;
+}
+
+/* Ensure flex-based layouts (sticky footer) have a reliable full-height canvas */
+html {
+    height: 100%;
+}
+
+body.d-flex.flex-column.min-vh-100 {
+    /* Use dynamic viewport height where supported (mobile browser UI) */
+    min-height: 100dvh;
 }
 
 body {
@@ -542,6 +552,15 @@ textarea.form-control {
 .table {
     color: #ffffff;
     border-color: rgba(255, 255, 255, 0.08);
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.03);
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.05);
+    --bs-table-border-color: rgba(255, 255, 255, 0.08);
+}
+
+.table > :not(caption) > * > * {
+    background-color: transparent !important;
+    color: #ffffff;
 }
 
 .table thead th {
@@ -561,6 +580,43 @@ textarea.form-control {
 
 .table tbody tr:hover {
     background: rgba(255, 255, 255, 0.03);
+}
+
+/* Override Bootstrap light table sections to keep dark uniformity */
+.table-light,
+.table-light > th,
+.table-light > td,
+thead.table-light th {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: var(--text-secondary) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Keep list-based sections (timelines/services/worker lists) in dark theme */
+.list-group-item {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.list-group-item small,
+.list-group-item .text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* Normalize "light" utility backgrounds used in templates */
+.bg-light {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+.bg-light .text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* Ensure badges on dark surfaces remain readable */
+.badge.bg-secondary {
+    color: #ffffff;
 }
 
 /* Dropdown */
@@ -697,6 +753,114 @@ textarea.form-control {
     .kanban-column {
         flex: 0 0 280px;
     }
+}
+
+/* Worker Form - Skills Checkbox Grid Layout */
+.worker-form .worker-skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+.worker-form .skill-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.25rem 0;
+}
+
+.worker-form .skill-checkbox-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--primary);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.worker-form .skill-checkbox-item label {
+    margin: 0;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-weight: normal;
+    font-size: 0.9rem;
+    user-select: none;
+}
+
+.worker-form .skill-checkbox-item label:hover {
+    color: #ffffff;
+}
+
+.worker-form .skill-checkbox-item input[type="checkbox"]:checked + label,
+.worker-form .skill-checkbox-item input[type="checkbox"]:checked ~ label {
+    color: var(--primary);
+    font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .worker-form .worker-skills-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+    
+    .worker-form .skill-checkbox-item label {
+        font-size: 0.85rem;
+    }
+}
+
+/* Alternative: If you want to use the form's default rendering but style it nicely */
+.worker-form .worker-skills ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+.worker-form .worker-skills li {
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.worker-form .worker-skills .form-check {
+    margin: 0;
+    padding-left: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.worker-form .worker-skills .form-check-input {
+    margin-top: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.worker-form .worker-skills .form-check-label {
+    margin: 0;
+    cursor: pointer;
+    white-space: normal;
+    line-height: 1.2;
+    color: var(--text-secondary);
+}
+
+.worker-form .worker-skills .form-check-label:hover {
+    color: #ffffff;
 }
 
 /* Print Styles */

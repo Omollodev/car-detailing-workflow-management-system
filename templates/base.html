@@ -15,7 +15,7 @@
     <link rel="icon" href="{% static 'imgs/carwash.png' %}" type="image/png">
     {% block extra_css %}{% endblock %}
 </head>
-<body{% if user.is_authenticated and not user.is_customer %} data-staff-notification-poll="1"{% endif %}>
+<body class="d-flex flex-column min-vh-100"{% if user.is_authenticated and not user.is_customer %} data-staff-notification-poll="1"{% endif %}>
     {% if user.is_authenticated %}
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
@@ -181,7 +181,7 @@
     {% endif %}
     
     <!-- Main Content -->
-    <main class="{% block main_class %}container-fluid py-4{% endblock %}">
+    <main id="app-main" class="flex-grow-1 {% block main_class %}container-fluid py-4{% endblock %}">
         {% block content %}{% endblock %}
     </main>
     

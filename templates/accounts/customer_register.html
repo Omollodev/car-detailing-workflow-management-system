@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Create customer account - Safi Car Detailing{% endblock %}
+{% block title %}Create customer account - Carwash Detailing{% endblock %}
 
 {% block main_class %}{% endblock %}
 
@@ -71,6 +71,10 @@
                             </div>
                             {% endif %}
                             <button type="submit" class="btn btn-primary w-100 mt-4 py-2">Create account</button>
+                              <a href="{% url 'dashboard:landing' %}" class="btn btn-outline-secondary w-100 mt-2 py-2">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                Go to Home
+                            </a>
                         </form>
 
                         <p class="text-center text-muted small mt-4 mb-0">

@@ -21,11 +21,23 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-change-this-in-prod
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-CSRF_TRUSTED_ORIGINS = os.getenv(
+def _parse_csv_env(name, default):
+    """
+    Parse comma-separated env values and normalize common formatting issues.
+    This avoids runtime issues from accidental spaces or quoted entries.
+    """
+    raw_value = os.getenv(name, default)
+    return [item.strip().strip("'\"") for item in raw_value.split(',') if item.strip()]
+
+
+ALLOWED_HOSTS = _parse_csv_env(
+    'ALLOWED_HOSTS',
+    'localhost,127.0.0.1,car-detailing-workflow-management-system.onrender.com'
+)
+CSRF_TRUSTED_ORIGINS = _parse_csv_env(
     'CSRF_TRUSTED_ORIGINS',
-    'https://localhost,https://127.0.0.1'
-).split(',')
+    'https://localhost,https://127.0.0.1,https://car-detailing-workflow-management-system.onrender.com'
+)
 
 # Application definition
 INSTALLED_APPS = [

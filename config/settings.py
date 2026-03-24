@@ -97,13 +97,19 @@ WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
 
-# Database configuration
-# MySQL for development, PostgreSQL for production
-DATABASES = {
-    'default': dj_database_url.parse(
-        os.getenv('DATABASE_URL','')
-    )
-}
+# Use DATABASE_URL when valid, otherwise fall back to local sqlite.
+database_url = (os.getenv('DATABASE_URL') or '').strip()
+if database_url and database_url != '://':
+    DATABASES = {
+        'default': dj_database_url.parse(database_url)
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 

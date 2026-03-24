@@ -101,7 +101,7 @@ ASGI_APPLICATION = 'config.asgi.application'
 # MySQL for development, PostgreSQL for production
 DATABASES = {
     'default': dj_database_url.parse(
-        os.getenv('DATABASE_URL', 'mysql://root:kalisec.2026@localhost:3306/car_detailing_db')
+        os.getenv('DATABASE_URL','')
     )
 }
 

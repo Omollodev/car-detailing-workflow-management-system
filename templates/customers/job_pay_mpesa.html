@@ -17,12 +17,40 @@
         <div class="col-lg-7">
             <div class="alert alert-info">
                 <strong>Pay with M-Pesa</strong><br>
-                Send money to the shop’s Till / Paybill number you were given, then submit the details below.
-                Your balance will update immediately. Staff can still verify the SMS if needed.
+                {% if mpesa_stk_enabled %}
+                Use <strong>STK Push</strong> for a prompt on your phone, or record a payment manually below if you already sent money.
+                {% else %}
+                Send money to the shop’s Till / Paybill if instructed, then submit the details below. Your balance updates immediately.
+                {% endif %}
             </div>
+
+            {% if mpesa_stk_enabled %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-phone me-2"></i>Pay with M-Pesa (STK)</h5>
+                    <small class="text-muted">Enter the Safaricom number that should receive the M-Pesa prompt.</small>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'customers:job_mpesa_stk' job_pk=job.pk %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label" for="stk_phone">M-Pesa phone</label>
+                            <input type="tel" class="form-control" id="stk_phone" name="stk_phone"
+                                   placeholder="07XX XXX XXX" required autocomplete="tel">
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-lightning-charge me-1"></i>Request payment (KES {{ job.balance_due|floatformat:0 }})
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <!--
+            <p class="text-muted small text-center mb-3">— or enter payment details manually —</p>
+            {% endif %}
+
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0">Job #{{ job.id }} · {{ job.vehicle.plate_number }}</h4>
+                    <h4 class="mb-0">Record payment · Job #{{ job.id }} · {{ job.vehicle.plate_number }}</h4>
                     <small class="text-muted">Total {{ job.formatted_total_price }} · Paid KES {{ job.amount_paid|floatformat:2 }} ·
                         <strong>Balance KES {{ job.balance_due|floatformat:2 }}</strong></small>
                 </div>
@@ -39,7 +67,7 @@
                     </form>
                 </div>
             </div>
-
+            -->
             <p class="text-muted small mt-3 mb-0">
                 Paying with <strong>cash at the shop</strong>? The manager will update your payment on their side — you do not need this form.
             </p>

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Carwash Detailing - Workflow Management System{% endblock %}
+{% block title %}Carwash Workflow Management System{% endblock %}
 
 {% block main_class %}{% endblock %}
 
@@ -13,7 +13,7 @@
             <div class="row align-items-center py-5">
                 <div class="col-lg-6">
                     <img src="{% static 'imgs/carwash.png' %}" alt="Safi Car Detailing" height="72" class="mb-3 rounded bg-white p-2">
-                    <h1 class="display-5 fw-bold mb-4">CarWash Detailing Workflow Management</h1>
+                    <h1 class="display-5 fw-bold mb-4">CarWash Workflow Management System</h1>
                     <p class="lead mb-4">
                         Professional car detailing workflow management system. 
                         Track jobs, manage workers, and deliver exceptional service to your customers.
@@ -21,11 +21,7 @@
                     <div class="d-flex flex-wrap gap-2">
                         <a href="{% url 'accounts:login' %}" class="btn btn-light btn-lg px-4">
                             <i class="bi bi-box-arrow-in-right me-2"></i>
-                            Staff login
-                        </a>
-                        <a href="{% url 'accounts:customer_register' %}" class="btn btn-outline-light btn-lg px-4">
-                            <i class="bi bi-person-plus me-2"></i>
-                            Customer sign up
+                            Get Started
                         </a>
                     </div>
                 </div>
@@ -91,9 +87,15 @@
                 <div class="col-md-6">
                     <h5>
                         <img src="{% static 'imgs/carwash.png' %}" alt="Safi Car Detailing" height="32" class="me-2">
-                    </i>Carwash Detailing Management</h5>
+                    </i>Carwash Workflow Management System</h5>
                     <p class="text-white-50 mb-0">
                         Professional car detailing services in Thika, Kenya.
+                    </p>
+                    <p class="text-white-50 mb-0">
+                        Created by: <a href="https://github.com/Omollodev" class="auth-footer-link">OmolloDevox</a>
+                    </p>
+                    <p class="text-white-50 mb-0">
+                        Email: <a href="mailto:devoxomollo@gmail.com" class="auth-footer-link">devoxomollo@gmail.com</a>
                     </p>
                 </div>
                 <div class="col-md-6 text-md-end">

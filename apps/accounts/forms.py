@@ -5,6 +5,7 @@ Forms for user authentication and management.
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
@@ -52,30 +53,19 @@ class CustomerRegistrationForm(UserCreationForm):
         'class': 'form-control',
         'placeholder': 'Last name',
     }))
-    email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={
-        'class': 'form-control',
-        'placeholder': 'email@example.com',
-    }))
+    email = forms.EmailField(
+        required=True,
+        help_text='Use a Gmail address (@gmail.com).',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'you@gmail.com',
+            'autocomplete': 'email',
+        }),
+    )
     phone = forms.CharField(max_length=20, required=True, widget=forms.TextInput(attrs={
         'class': 'form-control',
         'placeholder': '+254 7XX XXX XXX',
     }))
-    business_name = forms.CharField(
-        max_length=200,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Business / store name (optional)',
-        }),
-    )
-    address = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'rows': 2,
-            'placeholder': 'Address (optional)',
-        }),
-    )
 
     class Meta(UserCreationForm.Meta):
         model = User
@@ -95,6 +85,17 @@ class CustomerRegistrationForm(UserCreationForm):
             'class': 'form-control',
             'placeholder': 'Confirm password',
         })
+
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip().lower()
+        if not email:
+            raise ValidationError('Email is required.')
+        allowed = ('@gmail.com', '@googlemail.com','@yahoo.com','@outlook.com','@hotmail.com')
+        if not any(email.endswith(s) for s in allowed):
+            raise ValidationError(
+                'Please register with a Gmail address (e.g. you@gmail.com, you@yahoo.com, you@outlook.com, you@hotmail.com).'
+            )
+        return email
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -171,7 +172,14 @@ class UserUpdateForm(forms.ModelForm):
     
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'phone', 'address', 'profile_pic']
+        fields = [
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'address',
+            'profile_pic',
+        ]
         widgets = {
             'first_name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -187,7 +195,8 @@ class UserUpdateForm(forms.ModelForm):
             }),
             'address': forms.Textarea(attrs={
                 'class': 'form-control',
-                'rows': 3,
+                'rows': 2,
+                'placeholder': 'Optional',
             }),
             'profile_pic': forms.FileInput(attrs={
                 'class': 'form-control',

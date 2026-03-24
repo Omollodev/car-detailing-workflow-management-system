@@ -101,7 +101,7 @@ ASGI_APPLICATION = 'config.asgi.application'
 # MySQL for development, PostgreSQL for production
 DATABASES = {
     'default': dj_database_url.parse(
-        os.getenv('DATABASE_URL', 'sqlite:///db.sqlite3')
+        os.getenv('DATABASE_URL', 'mysql://root:kalisec.2026@localhost:3306/car_detailing_db')
     )
 }
 
@@ -185,8 +185,49 @@ BUSINESS_PHONE = os.getenv('BUSINESS_PHONE')
 BUSINESS_EMAIL = os.getenv('BUSINESS_EMAIL')
 BUSINESS_ADDRESS = os.getenv('BUSINESS_ADDRESS')
 
+# Email (customer welcome / notifications). Use SMTP in production.
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend',
+)
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587') or '587')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv(
+    'DEFAULT_FROM_EMAIL',
+    os.getenv('BUSINESS_EMAIL', 'noreply@localhost'),
+)
+
+# Optional SMS after registration (Africa's Talking — common in Kenya)
+REGISTRATION_SMS_ENABLED = os.getenv(
+    'REGISTRATION_SMS_ENABLED', 'False'
+).lower() in ('true', '1', 'yes')
+AT_USERNAME = os.getenv('AT_USERNAME', '')
+AT_API_KEY = os.getenv('AT_API_KEY', '')
+
+# M-Pesa Daraja — STK Push (Lipa na M-Pesa Online)
+MPESA_DARAJA_ENABLED = os.getenv(
+    'MPESA_DARAJA_ENABLED', 'False'
+).lower() in ('true', '1', 'yes')
+MPESA_ENV = os.getenv('MPESA_ENV', 'sandbox')
+MPESA_CONSUMER_KEY = os.getenv('MPESA_CONSUMER_KEY', '')
+MPESA_CONSUMER_SECRET = os.getenv('MPESA_CONSUMER_SECRET', '')
+MPESA_SHORTCODE = os.getenv('MPESA_SHORTCODE', '')
+MPESA_PASSKEY = os.getenv('MPESA_PASSKEY', '')
+# Paybill/till number for PartyB if different from BusinessShortCode (Till / Buy Goods)
+MPESA_PARTY_B = os.getenv('MPESA_PARTY_B', '')
+MPESA_CALLBACK_URL = os.getenv('MPESA_CALLBACK_URL', '')
+MPESA_TRANSACTION_TYPE = os.getenv(
+    'MPESA_TRANSACTION_TYPE', 'CustomerPayBillOnline'
+)
+
 # Security settings for production
 if not DEBUG:
+    # Heroku / Render / proxies terminate TLS — avoid redirect loops
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = True
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True

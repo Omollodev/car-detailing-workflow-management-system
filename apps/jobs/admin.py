@@ -3,7 +3,7 @@ Admin configuration for jobs app.
 """
 
 from django.contrib import admin
-from .models import Job, JobService
+from .models import Job, JobService, MpesaStkInitiation
 
 
 class JobServiceInline(admin.TabularInline):
@@ -69,3 +69,20 @@ class JobServiceAdmin(admin.ModelAdmin):
     list_filter = ['is_completed', 'service__category']
     search_fields = ['job__id', 'service__name']
     raw_id_fields = ['job', 'service', 'completed_by']
+
+
+@admin.register(MpesaStkInitiation)
+class MpesaStkInitiationAdmin(admin.ModelAdmin):
+    list_display = [
+        'id',
+        'job',
+        'amount',
+        'phone',
+        'status',
+        'checkout_request_id',
+        'created_at',
+    ]
+    list_filter = ['status', 'created_at']
+    search_fields = ['checkout_request_id', 'job__id', 'phone']
+    raw_id_fields = ['job']
+    readonly_fields = ['created_at', 'updated_at']

@@ -90,8 +90,14 @@ class CustomerForm(forms.ModelForm):
     
     class Meta:
         model = Customer
-        fields = ['name', 'phone', 'phone_secondary', 'email', 'address', 
-                  'service_preferences', 'notes', 'is_vip']
+        fields = [
+            'name',
+            'phone',
+            'email',
+            'service_preferences',
+            'notes',
+            'is_vip',
+        ]
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -101,18 +107,9 @@ class CustomerForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': '+254 7XX XXX XXX',
             }),
-            'phone_secondary': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Alternative number (optional)',
-            }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'email@example.com',
-            }),
-            'address': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 2,
-                'placeholder': 'Customer address',
             }),
             'service_preferences': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -146,8 +143,14 @@ class VehicleForm(forms.ModelForm):
     
     class Meta:
         model = Vehicle
-        fields = ['plate_number', 'make', 'model', 'year', 'color', 
-                  'vehicle_type', 'mileage', 'notes']
+        fields = [
+            'plate_number',
+            'make',
+            'model',
+            'year',
+            'color',
+            'vehicle_type',
+        ]
         widgets = {
             'plate_number': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -174,16 +177,6 @@ class VehicleForm(forms.ModelForm):
             }),
             'vehicle_type': forms.Select(attrs={
                 'class': 'form-select',
-            }),
-            'mileage': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '0',
-                'placeholder': 'Current mileage (km)',
-            }),
-            'notes': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 2,
-                'placeholder': 'Special notes about the vehicle',
             }),
         }
     
@@ -278,33 +271,40 @@ class QuickCustomerVehicleForm(forms.Form):
 
 class CustomerPortalProfileForm(forms.ModelForm):
     """
-    Form for customers to update their own business/store and contact details.
+    Form for customers to update contact details (streamlined portal).
     """
 
     class Meta:
         model = Customer
         fields = [
-            'business_name',
             'name',
             'phone',
             'phone_secondary',
             'email',
-            'address',
             'service_preferences',
         ]
         widgets = {
-            'business_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Business or store name (optional)',
-            }),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'phone_secondary': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'you@gmail.com',
+            }),
             'service_preferences': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Preferred services or notes for the shop',
+                'placeholder': 'Preferred services or short notes for the shop',
             }),
         }
+
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip().lower()
+        if not email:
+            return email
+        allowed = ('@gmail.com', '@googlemail.com','@yahoo.com','@outlook.com','@hotmail.com')
+        if not any(email.endswith(s) for s in allowed):
+            raise forms.ValidationError(
+                'Please use a Gmail address (e.g. you@gmail.com, you@yahoo.com, you@outlook.com, you@hotmail.com).'
+            )
+        return email

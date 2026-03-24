@@ -1,0 +1,13 @@
+
+import requests
+
+url = "https://api.safaricom.co.ke/YOUR_ENDPOINT"
+payload = "Headers\nKey: Authorization\nValue: Basic Z0hwOFpHc1RYWG1ZYnYyZ2gzSUdDQWJtMFFGRXBVc0tyZFN5MkZVRng5UGpjcnp5OmZ1RU1Ub1J1ZzlUb3NGQlVicEtjaTkzWEpHbm9teEhsaGt1RmRKWHB3dzM4cmMwZmlUajBBMlZiaFV6QTBvUnU="
+
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer <ACCESS_TOKEN>"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())

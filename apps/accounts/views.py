@@ -20,6 +20,7 @@ from .forms import (
 )
 from .decorators import admin_required
 from .models import User
+from .registration_notify import notify_customer_registered
 
 
 def customer_register_view(request):
@@ -41,8 +42,12 @@ def customer_register_view(request):
                 name=name or user.username,
                 phone=form.cleaned_data['phone'],
                 email=form.cleaned_data['email'],
-                business_name=form.cleaned_data.get('business_name', ''),
-                address=form.cleaned_data.get('address', ''),
+            )
+            notify_customer_registered(
+                name=name or user.username,
+                email=form.cleaned_data['email'],
+                phone=form.cleaned_data['phone'],
+                username=user.username,
             )
             login(request, user)
             messages.success(request, 'Welcome! Your customer account is ready.')

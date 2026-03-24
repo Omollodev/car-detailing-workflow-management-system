@@ -38,6 +38,20 @@ class User(AbstractUser):
         verbose_name=_('Phone Number'),
         help_text=_('Contact phone number')
     )
+
+    date_of_birth = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name=_('Date of Birth'),
+    )
+
+    # Kept in sync with DB (accounts 0001_initial); NOT NULL in PostgreSQL without null=True
+    address = models.TextField(
+        blank=True,
+        default='',
+        verbose_name=_('Address'),
+        help_text=_('Optional — customers can leave blank'),
+    )
     
     profile_pic = models.ImageField(
         upload_to='profile_pics/',
@@ -45,18 +59,7 @@ class User(AbstractUser):
         null=True,
         verbose_name=_('Profile Picture')
     )
-    
-    date_of_birth = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name=_('Date of Birth')
-    )
-    
-    address = models.TextField(
-        blank=True,
-        verbose_name=_('Address')
-    )
-    
+        
     is_active_worker = models.BooleanField(
         default=True,
         verbose_name=_('Active Worker'),

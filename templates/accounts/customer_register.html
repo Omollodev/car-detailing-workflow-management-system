@@ -1,84 +1,76 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Create customer account - Carwash Detailing{% endblock %}
+{% block title %}Create account · Carwash Detailing{% endblock %}
 
 {% block main_class %}{% endblock %}
 
 {% block content %}
-<div class="auth-page d-flex align-items-center justify-content-center">
+<div class="auth-page d-flex align-items-center justify-content-center py-4">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-8 col-lg-6">
+            <div class="col-11 col-sm-10 col-md-7 col-lg-5">
                 <div class="card auth-card">
-                    <div class="card-body">
-                        <div class="text-center mb-4">
-                            <img src="{% static 'imgs/carwash.png' %}" alt="Safi Car Detailing" class="auth-logo mb-3">
-                            <h1 class="auth-title mb-2">Sign up to manage a carwash..</h1>
-                            <p class="auth-subtitle mb-4">Create a customer profile and start booking services instantly.</p>
+                    <div class="card-body px-3 px-sm-4 py-4">
+                        <div class="text-center mb-3">
+                            <img src="{% static 'imgs/carwash.png' %}" alt="Car Detailing System" class="auth-logo mb-3">
+                            <h1 class="auth-title mb-2">Create your account</h1>
+                            <p class="auth-subtitle mb-0 small">Book services online. Use a <strong>Gmail</strong> address.</p>
                         </div>
 
-                        <form method="post" novalidate>
+                        <form method="post" novalidate class="mt-3">
                             {% csrf_token %}
-                            <div class="row g-3">
+                            <div class="row g-2 g-md-3">
                                 <div class="col-md-6">
-                                    <label class="form-label" for="id_first_name">First name</label>
+                                    <label class="form-label small mb-1" for="id_first_name">First name</label>
                                     {{ form.first_name }}
-                                    {% if form.first_name.errors %}<div class="invalid-feedback d-block">{{ form.first_name.errors.0 }}</div>{% endif %}
+                                    {% if form.first_name.errors %}<div class="invalid-feedback d-block small">{{ form.first_name.errors.0 }}</div>{% endif %}
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="id_last_name">Last name</label>
+                                    <label class="form-label small mb-1" for="id_last_name">Last name</label>
                                     {{ form.last_name }}
-                                    {% if form.last_name.errors %}<div class="invalid-feedback d-block">{{ form.last_name.errors.0 }}</div>{% endif %}
+                                    {% if form.last_name.errors %}<div class="invalid-feedback d-block small">{{ form.last_name.errors.0 }}</div>{% endif %}
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label" for="id_username">Username</label>
+                                    <label class="form-label small mb-1" for="id_username">Username</label>
                                     {{ form.username }}
-                                    {% if form.username.errors %}<div class="invalid-feedback d-block">{{ form.username.errors.0 }}</div>{% endif %}
+                                    {% if form.username.errors %}<div class="invalid-feedback d-block small">{{ form.username.errors.0 }}</div>{% endif %}
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label" for="id_email">Email</label>
+                                    <label class="form-label small mb-1" for="id_email">Gmail</label>
                                     {{ form.email }}
-                                    {% if form.email.errors %}<div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>{% endif %}
+                                    {% if form.email.help_text %}<div class="form-text small">{{ form.email.help_text }}</div>{% endif %}
+                                    {% if form.email.errors %}<div class="invalid-feedback d-block small">{{ form.email.errors.0 }}</div>{% endif %}
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label" for="id_phone">Phone</label>
+                                    <label class="form-label small mb-1" for="id_phone">Phone (M-Pesa / SMS)</label>
                                     {{ form.phone }}
-                                    {% if form.phone.errors %}<div class="invalid-feedback d-block">{{ form.phone.errors.0 }}</div>{% endif %}
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label" for="id_business_name">Business / store name <span class="text-muted">(optional)</span></label>
-                                    {{ form.business_name }}
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label" for="id_address">Address <span class="text-muted">(optional)</span></label>
-                                    {{ form.address }}
+                                    {% if form.phone.errors %}<div class="invalid-feedback d-block small">{{ form.phone.errors.0 }}</div>{% endif %}
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="id_password1">Password</label>
+                                    <label class="form-label small mb-1" for="id_password1">Password</label>
                                     {{ form.password1 }}
-                                    {% if form.password1.errors %}<div class="invalid-feedback d-block">{{ form.password1.errors.0 }}</div>{% endif %}
+                                    {% if form.password1.errors %}<div class="invalid-feedback d-block small">{{ form.password1.errors.0 }}</div>{% endif %}
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="id_password2">Confirm password</label>
+                                    <label class="form-label small mb-1" for="id_password2">Confirm</label>
                                     {{ form.password2 }}
-                                    {% if form.password2.errors %}<div class="invalid-feedback d-block">{{ form.password2.errors.0 }}</div>{% endif %}
+                                    {% if form.password2.errors %}<div class="invalid-feedback d-block small">{{ form.password2.errors.0 }}</div>{% endif %}
                                 </div>
                             </div>
                             {% if form.non_field_errors %}
-                            <div class="alert alert-danger mt-3 py-2 small">
+                            <div class="alert alert-danger mt-3 py-2 small mb-0">
                                 {% for err in form.non_field_errors %}{{ err }}{% endfor %}
                             </div>
                             {% endif %}
-                            <button type="submit" class="btn btn-primary w-100 mt-4 py-2">Create account</button>
-                              <a href="{% url 'dashboard:landing' %}" class="btn btn-outline-secondary w-100 mt-2 py-2">
-                                <i class="bi bi-arrow-left me-2"></i>
-                                Go to Home
+                            <button type="submit" class="btn btn-primary w-100 mt-3 py-2">Create account</button>
+                            <a href="{% url 'dashboard:landing' %}" class="btn btn-outline-secondary w-100 mt-2 py-2">
+                                <i class="bi bi-arrow-left me-2"></i>Home
                             </a>
                         </form>
 
-                        <p class="text-center text-muted small mt-4 mb-0">
-                            Already have an account? <a href="{% url 'accounts:login' %}" class="auth-footer-link">Sign in</a>
+                        <p class="text-center text-muted small mt-3 mb-0">
+                            Already registered? <a href="{% url 'accounts:login' %}" class="auth-footer-link">Sign in</a>
                         </p>
                     </div>
                 </div>

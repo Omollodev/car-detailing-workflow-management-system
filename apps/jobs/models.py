@@ -1,5 +1,5 @@
 """
-Job and JobService models - Core models for the workflow management system.
+Job and JobService models - Core models for the carwash workflow management system.
 """
 
 from django.db import models
@@ -711,6 +711,47 @@ class JobService(models.Model):
         # Update job alert flag
         self.job.update_alert_flag()
         self.job.save(update_fields=['need_alert'])
+
+
+class MpesaStkInitiation(models.Model):
+    """
+    Tracks a Daraja STK Push request until the callback confirms success/failure.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', _('Pending')
+        COMPLETED = 'completed', _('Completed')
+        FAILED = 'failed', _('Failed')
+
+    job = models.ForeignKey(
+        'Job',
+        on_delete=models.CASCADE,
+        related_name='mpesa_stk_requests',
+    )
+    checkout_request_id = models.CharField(
+        max_length=120,
+        unique=True,
+        db_index=True,
+    )
+    merchant_request_id = models.CharField(max_length=120, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    phone = models.CharField(max_length=20)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    result_desc = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = _('M-Pesa STK initiation')
+        verbose_name_plural = _('M-Pesa STK initiations')
+
+    def __str__(self) -> str:
+        return f"STK {self.checkout_request_id[:20]}… → Job #{self.job_id}"
 
 
 def _notify_managers_job_completed(job: 'Job', completed_by=None) -> None:

@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ BUSINESS_NAME|default:"Carwash Detailing" }}{% endblock %}</title>
-    
+        <title>{% block title %}{{ BUSINESS_NAME|default:"Carwash Workflow Management System" }}{% endblock %}</title>
+        
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -49,7 +49,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'portal_profile' %}active{% endif %}" href="{% url 'customers:portal_profile' %}">
-                            <i class="bi bi-shop me-1"></i> Store &amp; profile
+                            <i class="bi bi-person me-1"></i> Profile
                         </a>
                     </li>
                     <li class="nav-item">

@@ -2,7 +2,7 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}{% if vehicle %}Edit Vehicle{% else %}Add Vehicle{% endif %} - DetailFlow{% endblock %}
+{% block title %}{% if vehicle %}Edit Vehicle{% else %}Add Vehicle{% endif %} - Carwash Workflow Management System{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -42,12 +42,6 @@
                             </div>
                             <div class="col-md-6">
                                 {{ form.color|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.mileage|as_crispy_field }}
-                            </div>
-                            <div class="col-12">
-                                {{ form.notes|as_crispy_field }}
                             </div>
                         </div>
 

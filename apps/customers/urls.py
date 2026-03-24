@@ -8,6 +8,9 @@ from . import views
 app_name = 'customers'
 
 urlpatterns = [
+    # M-Pesa Daraja STK callback (public HTTPS endpoint; no login)
+    path('mpesa/stk-callback/', views.mpesa_stk_callback_view, name='mpesa_stk_callback'),
+
     # Customer self-service portal (must be before <int:pk>/ routes)
     path('portal/', views.customer_portal_view, name='portal'),
     path('portal/profile/', views.customer_portal_profile_view, name='portal_profile'),
@@ -22,6 +25,11 @@ urlpatterns = [
         'portal/jobs/<int:job_pk>/pay/mpesa/',
         views.customer_job_mpesa_pay_view,
         name='job_pay_mpesa',
+    ),
+    path(
+        'portal/jobs/<int:job_pk>/pay/mpesa/stk/',
+        views.customer_job_mpesa_stk_initiate_view,
+        name='job_mpesa_stk',
     ),
 
     # Customers

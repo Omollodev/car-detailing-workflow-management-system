@@ -2,16 +2,21 @@
 Views for customer and vehicle management.
 """
 
+import logging
+
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.db.models import Q
+from django.urls import reverse
 
 from apps.accounts.decorators import manager_required, customer_required
 from apps.jobs.forms import CustomerJobBookingForm
-from apps.jobs.models import Job, JobService
+from apps.jobs.models import Job, JobService, MpesaStkInitiation
 
 from .models import Customer, Vehicle
 from .forms import (
@@ -22,6 +27,14 @@ from .forms import (
     CustomerMpesaPaymentForm,
     PaymentMethodSelectionForm,
 )
+from .mpesa_daraja import (
+    extract_stk_result,
+    normalize_kenya_msisdn,
+    parse_stk_callback_body,
+    stk_push,
+)
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -480,4 +493,146 @@ def customer_job_mpesa_pay_view(request, job_pk):
     return render(request, 'customers/job_pay_mpesa.html', {
         'form': form,
         'job': job,
+        'mpesa_stk_enabled': bool(getattr(settings, 'MPESA_DARAJA_ENABLED', False)),
     })
+
+
+@login_required
+@customer_required
+@require_http_methods(['POST'])
+def customer_job_mpesa_stk_initiate_view(request, job_pk):
+    """
+    Start Safaricom Daraja STK Push for the job balance (customer portal).
+    """
+    from decimal import ROUND_UP, Decimal
+
+    customer = request.user.customer_profile
+    job = get_object_or_404(
+        Job.objects.select_related('customer', 'vehicle'),
+        pk=job_pk,
+        customer=customer,
+    )
+
+    if job.balance_due <= 0:
+        messages.info(request, 'This job has no balance due.')
+        return redirect('jobs:detail', pk=job.pk)
+
+    if job.status in ('completed', 'cancelled'):
+        messages.warning(request, 'Payment is not available for this job.')
+        return redirect('jobs:detail', pk=job.pk)
+
+    phone_raw = (request.POST.get('stk_phone') or '').strip()
+    if not phone_raw:
+        messages.error(request, 'Enter the M-Pesa phone number that will receive the prompt.')
+        return redirect('customers:job_pay_mpesa', job_pk=job.pk)
+
+    try:
+        msisdn = normalize_kenya_msisdn(phone_raw)
+    except ValueError as exc:
+        messages.error(request, str(exc))
+        return redirect('customers:job_pay_mpesa', job_pk=job.pk)
+
+    amount = job.balance_due.quantize(Decimal('1'), rounding=ROUND_UP)
+    acc_ref = f'JOB{job.pk}'[:12]
+
+    try:
+        resp = stk_push(
+            phone_msisdn=msisdn,
+            amount=amount,
+            account_reference=acc_ref,
+            transaction_desc=f'Job {job.pk}',
+        )
+    except Exception as exc:
+        logger.exception('STK push failed for job %s', job.pk)
+        messages.error(
+            request,
+            f'Could not start M-Pesa on your phone. {exc}',
+        )
+        return redirect('customers:job_pay_mpesa', job_pk=job.pk)
+
+    if str(resp.get('ResponseCode', '1')) != '0':
+        msg = (
+            resp.get('CustomerMessage')
+            or resp.get('errorMessage')
+            or resp.get('ResponseDescription')
+            or 'M-Pesa could not start this payment.'
+        )
+        messages.error(request, msg)
+        return redirect('customers:job_pay_mpesa', job_pk=job.pk)
+
+    checkout_id = (resp.get('CheckoutRequestID') or '').strip()
+    merchant_id = (resp.get('MerchantRequestID') or '').strip()
+    if checkout_id:
+        MpesaStkInitiation.objects.create(
+            job=job,
+            checkout_request_id=checkout_id,
+            merchant_request_id=merchant_id[:120],
+            amount=amount,
+            phone=msisdn,
+        )
+
+    messages.success(
+        request,
+        'Check your phone to approve the M-Pesa payment. '
+        'Your job balance will update automatically after you complete it.',
+    )
+    return redirect('jobs:detail', pk=job.pk)
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def mpesa_stk_callback_view(request):
+    """
+    Daraja STK callback (no CSRF; must be HTTPS and publicly reachable in production).
+    """
+    from decimal import Decimal
+
+    data = parse_stk_callback_body(request.body)
+    parsed = extract_stk_result(data)
+    if not parsed or not parsed.get('checkout_request_id'):
+        return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
+
+    checkout_id = parsed['checkout_request_id']
+    try:
+        initiation = MpesaStkInitiation.objects.select_related('job').get(
+            checkout_request_id=checkout_id
+        )
+    except MpesaStkInitiation.DoesNotExist:
+        logger.warning('STK callback: unknown CheckoutRequestID %s', checkout_id)
+        return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
+
+    if initiation.status == MpesaStkInitiation.Status.COMPLETED:
+        return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
+
+    rc = parsed.get('result_code')
+    if rc != 0:
+        initiation.status = MpesaStkInitiation.Status.FAILED
+        initiation.result_desc = str(parsed.get('result_desc') or '')[:500]
+        initiation.save(update_fields=['status', 'result_desc', 'updated_at'])
+        return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
+
+    receipt = (parsed.get('mpesa_receipt') or '').strip()
+    raw_amount = parsed.get('amount')
+    if raw_amount is not None:
+        pay_amount = Decimal(str(raw_amount))
+    else:
+        pay_amount = initiation.amount
+
+    job = initiation.job
+    if receipt and job.mpesa_transaction_id == receipt:
+        initiation.status = MpesaStkInitiation.Status.COMPLETED
+        initiation.save(update_fields=['status', 'updated_at'])
+        return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
+
+    txn_id = receipt or f'STK-{checkout_id[:20]}'
+    job.apply_mpesa_payment(
+        pay_amount,
+        phone=parsed.get('phone') or initiation.phone,
+        transaction_id=txn_id,
+        user=None,
+    )
+    initiation.status = MpesaStkInitiation.Status.COMPLETED
+    initiation.result_desc = 'Success'
+    initiation.save(update_fields=['status', 'result_desc', 'updated_at'])
+
+    return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})

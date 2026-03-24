@@ -35,7 +35,7 @@ ALLOWED_HOSTS = _parse_csv_env(
     'localhost,127.0.0.1,car-detailing-workflow-management-system-hdep.onrender.com'
 )
 CSRF_TRUSTED_ORIGINS = _parse_csv_env(
-    'CSRF_TRUSTED_ORIGINS','https://localhost,https://127.0.0.1,https://car-detailing-workflow-management-system-hdep.onrender.com/'
+    'CSRF_TRUSTED_ORIGINS','https://localhost,https://127.0.0.1,https://car-detailing-workflow-management-system-hdep.onrender.com'
 )
 
 # Application definition
@@ -98,18 +98,42 @@ ASGI_APPLICATION = 'config.asgi.application'
 
 
 # Use DATABASE_URL when valid, otherwise fall back to local sqlite.
+# Database configuration
+# Use DATABASE_URL when valid, otherwise fall back to local sqlite.
 database_url = (os.getenv('DATABASE_URL') or '').strip()
+
+# In production, we MUST have a valid DATABASE_URL
 if database_url and database_url != '://':
-    DATABASES = {
-        'default': dj_database_url.parse(database_url)
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+    try:
+        DATABASES = {
+            'default': dj_database_url.parse(database_url, conn_max_age=600)
         }
-    }
+        # Add connection health check for production
+        if not DEBUG:
+            DATABASES['default']['CONN_MAX_AGE'] = 600
+            DATABASES['default']['CONN_HEALTH_CHECKS'] = True
+    except Exception as e:
+        if DEBUG:
+            # In development, fall back to SQLite
+            DATABASES = {
+                'default': {
+                    'ENGINE': 'django.db.backends.sqlite3',
+                    'NAME': BASE_DIR / 'db.sqlite3',
+                }
+            }
+        else:
+            # In production, fail loudly
+            raise Exception(f"Invalid DATABASE_URL configuration: {e}")
+else:
+    if DEBUG:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+    else:
+        raise Exception("DATABASE_URL environment variable is required in production")
 
 
 

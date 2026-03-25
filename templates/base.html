@@ -15,7 +15,7 @@
     <link rel="icon" href="{% static 'imgs/carwash.png' %}" type="image/png">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="d-flex flex-column min-vh-100" data-ajax-polling-interval="{{ AJAX_POLLING_INTERVAL|default:30000 }}"{% if user.is_authenticated and not user.is_customer %} data-staff-notification-poll="1"{% endif %}>
+    <body class="d-flex flex-column min-vh-100" data-ajax-polling-interval="{{ AJAX_POLLING_INTERVAL|default:30000 }}"{% if user.is_authenticated and not user.is_customer %} data-staff-notification-poll="1"{% endif %}>
     {% if user.is_authenticated %}
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">

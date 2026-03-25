@@ -241,9 +241,9 @@ AT_API_KEY = os.getenv('AT_API_KEY', '')
 MPESA_DARAJA_ENABLED = os.getenv(
     'MPESA_DARAJA_ENABLED', 'False'
 ).lower() in ('true', '1', 'yes')
-MPESA_ENV = os.getenv('MPESA_ENV', 'sandbox')
-MPESA_CONSUMER_KEY = os.getenv('MPESA_CONSUMER_KEY', '')
-MPESA_CONSUMER_SECRET = os.getenv('MPESA_CONSUMER_SECRET', '')
+MPESA_ENV = os.getenv('MPESA_ENV')
+MPESA_CONSUMER_KEY = os.getenv('MPESA_CONSUMER_KEY')
+MPESA_CONSUMER_SECRET = os.getenv('MPESA_CONSUMER_SECRET')
 MPESA_SHORTCODE = os.getenv('MPESA_SHORTCODE', '')
 MPESA_PASSKEY = os.getenv('MPESA_PASSKEY', '')
 # Paybill/till number for PartyB if different from BusinessShortCode (Till / Buy Goods)
@@ -252,6 +252,14 @@ MPESA_CALLBACK_URL = os.getenv('MPESA_CALLBACK_URL', '')
 MPESA_TRANSACTION_TYPE = os.getenv(
     'MPESA_TRANSACTION_TYPE', 'CustomerPayBillOnline'
 )
+MPESA_INITIATOR = os.getenv('MPESA_INITIATOR')
+MPESA_SECURITY_CREDENTIAL = os.getenv('MPESA_SECURITY_CREDENTIAL', '')
+MPESA_B2B_COMMAND_ID = os.getenv('MPESA_B2B_COMMAND_ID', 'BusinessPayBill')
+MPESA_SENDER_IDENTIFIER_TYPE = os.getenv('MPESA_SENDER_IDENTIFIER_TYPE', '4')
+MPESA_RECEIVER_IDENTIFIER_TYPE = os.getenv('MPESA_RECEIVER_IDENTIFIER_TYPE', '4')
+MPESA_REQUESTER = os.getenv('MPESA_REQUESTER', '')
+MPESA_QUEUE_TIMEOUT_URL = os.getenv('MPESA_QUEUE_TIMEOUT_URL', MPESA_CALLBACK_URL)
+MPESA_RESULT_URL = os.getenv('MPESA_RESULT_URL', MPESA_CALLBACK_URL)
 
 # Security settings for production
 if not DEBUG:

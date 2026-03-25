@@ -1,15 +1,10 @@
 """
-Safaricom Daraja — Lipa na M-Pesa Online (M-Pesa Express / STK Push).
+Safaricom Daraja payments helper.
 
-Merchant-initiated C2B: customer receives an authorization prompt on their phone.
+This module now uses the B2B PayBill flow (BusinessPayBill) and keeps the
+existing ``stk_push`` function name for compatibility with current views.
 
-Endpoints:
-  Sandbox:    https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest
-  Production: https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest
-
-Payload shape matches Daraja samples (string fields for Amount, shortcode, phones).
-
-Configure via environment variables (see MPESA_AND_EMAIL_SETUP.md).
+Configure via environment variables in settings.
 Uses only the Python standard library (urllib); no ``requests`` required.
 """
 
@@ -21,7 +16,6 @@ import logging
 import ssl
 import urllib.error
 import urllib.request
-from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -37,16 +31,7 @@ def _api_base() -> str:
     return "https://sandbox.safaricom.co.ke"
 
 
-STK_PROCESS_REQUEST_PATH = "/mpesa/stkpush/v1/processrequest"
-
-
-def _timestamp() -> str:
-    return datetime.now().strftime("%Y%m%d%H%M%S")
-
-
-def _stk_password(shortcode: str, passkey: str, ts: str) -> str:
-    raw = f"{shortcode}{passkey}{ts}"
-    return base64.b64encode(raw.encode("utf-8")).decode("ascii")
+B2B_PAYMENT_REQUEST_PATH = "/mpesa/b2b/v1/paymentrequest"
 
 
 def get_access_token() -> str:
@@ -93,47 +78,65 @@ def stk_push(
     transaction_desc: str,
 ) -> dict[str, Any]:
     """
-    Initiate STK Push. Returns Daraja JSON (includes CheckoutRequestID on success).
+    Initiate B2B PayBill payment request.
+    Keeps legacy function name for compatibility with existing call sites.
     """
     if not getattr(settings, "MPESA_DARAJA_ENABLED", False):
         raise RuntimeError("M-Pesa Daraja is not enabled (set MPESA_DARAJA_ENABLED=true).")
 
-    shortcode = str(getattr(settings, "MPESA_SHORTCODE", "") or "").strip()
-    passkey = getattr(settings, "MPESA_PASSKEY", "") or ""
-    callback = (getattr(settings, "MPESA_CALLBACK_URL", "") or "").strip()
-    tx_type = (
-        getattr(settings, "MPESA_TRANSACTION_TYPE", None) or "CustomerPayBillOnline"
+    party_a = str(getattr(settings, "MPESA_SHORTCODE", "") or "").strip()
+    party_b = str(getattr(settings, "MPESA_PARTY_B", "") or "").strip()
+    initiator = str(getattr(settings, "MPESA_INITIATOR", "") or "safi-carwash").strip()
+    security_credential = str(
+        getattr(settings, "MPESA_SECURITY_CREDENTIAL", "") or ""
+    ).strip()
+    command_id = str(
+        getattr(settings, "MPESA_B2B_COMMAND_ID", "") or "BusinessPayBill"
+    ).strip()
+    sender_identifier_type = str(
+        getattr(settings, "MPESA_SENDER_IDENTIFIER_TYPE", "") or "4"
+    ).strip()
+    receiver_identifier_type = str(
+        getattr(settings, "MPESA_RECEIVER_IDENTIFIER_TYPE", "") or "4"
+    ).strip()
+    requester = str(getattr(settings, "MPESA_REQUESTER", "") or phone_msisdn).strip()
+    timeout_url = str(
+        getattr(settings, "MPESA_QUEUE_TIMEOUT_URL", "") or getattr(settings, "MPESA_CALLBACK_URL", "")
+    ).strip()
+    result_url = str(
+        getattr(settings, "MPESA_RESULT_URL", "") or getattr(settings, "MPESA_CALLBACK_URL", "")
     ).strip()
 
-    if not shortcode or not passkey or not callback:
+    if not party_a or not party_b or not security_credential or not timeout_url or not result_url:
         raise RuntimeError(
-            "MPESA_SHORTCODE, MPESA_PASSKEY, and MPESA_CALLBACK_URL must be set."
+            "MPESA_SHORTCODE, MPESA_PARTY_B, MPESA_SECURITY_CREDENTIAL, "
+            "MPESA_QUEUE_TIMEOUT_URL/MPESA_CALLBACK_URL, and "
+            "MPESA_RESULT_URL/MPESA_CALLBACK_URL must be set."
         )
 
     amt = int(Decimal(amount).quantize(Decimal("1")))
     if amt < 1:
         raise ValueError("Amount must be at least 1 KES.")
 
-    ts = _timestamp()
     token = get_access_token()
-    party_b = str(getattr(settings, "MPESA_PARTY_B", "") or shortcode).strip()
-
-    # Daraja accepts the same shape as their Python sample: mostly string values.
     payload = {
-        "BusinessShortCode": shortcode,
-        "Password": _stk_password(shortcode, passkey, ts),
-        "Timestamp": ts,
-        "TransactionType": tx_type,
-        "Amount": str(amt),
-        "PartyA": phone_msisdn,
-        "PartyB": party_b,
-        "PhoneNumber": phone_msisdn,
-        "CallBackURL": callback,
-        "AccountReference": (account_reference or "Payment")[:12],
-        "TransactionDesc": (transaction_desc or "Payment")[:13],
+        "Initiator": initiator,
+        "SecurityCredential": security_credential,
+        "CommandID": command_id,
+        "Amount": amt,
+        "PartyA": party_a,
+        "PartyB": int(party_b) if party_b.isdigit() else party_b,
+        "SenderIdentifierType": sender_identifier_type,
+        "ReceiverIdentifierType": receiver_identifier_type,
+        "RecieverIdentifierType": receiver_identifier_type,
+        "AccountReference": (account_reference or "Payment")[:20],
+        "Requester": int(requester) if requester.isdigit() else requester,
+        "Remarks": (transaction_desc or "Payment")[:100],
+        "QueueTimeOutURL": timeout_url,
+        "ResultURL": result_url,
     }
 
-    url = f"{_api_base()}{STK_PROCESS_REQUEST_PATH}"
+    url = f"{_api_base()}{B2B_PAYMENT_REQUEST_PATH}"
     body = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         url,
@@ -147,7 +150,19 @@ def stk_push(
     ctx = ssl.create_default_context()
     try:
         with urllib.request.urlopen(req, timeout=45, context=ctx) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+            data = json.loads(resp.read().decode("utf-8"))
+            # Keep existing view/model flow working by mapping common B2B ids.
+            conversation_id = (
+                (data.get("ConversationID") or "").strip()
+                or (data.get("OriginatorConversationID") or "").strip()
+            )
+            if conversation_id and not data.get("CheckoutRequestID"):
+                data["CheckoutRequestID"] = conversation_id
+            if not data.get("MerchantRequestID"):
+                data["MerchantRequestID"] = (data.get("OriginatorConversationID") or "")[:120]
+            if data.get("ResponseCode") is None:
+                data["ResponseCode"] = "0"
+            return data
     except urllib.error.HTTPError as e:
         err_body = e.read().decode("utf-8", errors="replace")
         try:
@@ -176,33 +191,66 @@ def extract_stk_result(data: dict[str, Any]) -> dict[str, Any] | None:
     """
     Return dict with checkout_request_id, result_code, amount, receipt, phone or None.
     """
+    # STK callback format
     try:
         cb = data["Body"]["stkCallback"]
     except (KeyError, TypeError):
+        cb = None
+
+    if cb:
+        checkout_id = cb.get("CheckoutRequestID") or ""
+        result_code = cb.get("ResultCode")
+        result_desc = cb.get("ResultDesc") or ""
+
+        out: dict[str, Any] = {
+            "checkout_request_id": checkout_id,
+            "result_code": result_code,
+            "result_desc": result_desc,
+            "amount": None,
+            "mpesa_receipt": None,
+            "phone": None,
+        }
+
+        meta = cb.get("CallbackMetadata") or {}
+        items = meta.get("Item") or []
+        for item in items:
+            name = item.get("Name")
+            val = item.get("Value")
+            if name == "Amount":
+                out["amount"] = val
+            elif name == "MpesaReceiptNumber":
+                out["mpesa_receipt"] = str(val) if val is not None else None
+            elif name == "PhoneNumber":
+                out["phone"] = str(val) if val is not None else None
+        return out
+
+    # B2B result callback format
+    try:
+        result = data["Result"]
+    except (KeyError, TypeError):
         return None
 
-    checkout_id = cb.get("CheckoutRequestID") or ""
-    result_code = cb.get("ResultCode")
-    result_desc = cb.get("ResultDesc") or ""
-
-    out: dict[str, Any] = {
-        "checkout_request_id": checkout_id,
-        "result_code": result_code,
-        "result_desc": result_desc,
+    out = {
+        "checkout_request_id": (
+            result.get("ConversationID")
+            or result.get("OriginatorConversationID")
+            or ""
+        ),
+        "result_code": result.get("ResultCode"),
+        "result_desc": result.get("ResultDesc") or "",
         "amount": None,
         "mpesa_receipt": None,
         "phone": None,
     }
 
-    meta = cb.get("CallbackMetadata") or {}
-    items = meta.get("Item") or []
-    for item in items:
-        name = item.get("Name")
-        val = item.get("Value")
-        if name == "Amount":
+    params = (result.get("ResultParameters") or {}).get("ResultParameter") or []
+    for param in params:
+        key = param.get("Key")
+        val = param.get("Value")
+        if key in ("Amount", "TransactionAmount"):
             out["amount"] = val
-        elif name == "MpesaReceiptNumber":
+        elif key in ("TransactionReceipt", "MpesaReceiptNumber"):
             out["mpesa_receipt"] = str(val) if val is not None else None
-        elif name == "PhoneNumber":
+        elif key in ("ReceiverPartyPublicName", "PhoneNumber"):
             out["phone"] = str(val) if val is not None else None
     return out

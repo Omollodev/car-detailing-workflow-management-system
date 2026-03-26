@@ -19,5 +19,5 @@ COPY . /app
 
 ENV DJANGO_SETTINGS_MODULE=config.settings
 
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "config.asgi:application"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "-v", "3", "config.asgi:application"]
 

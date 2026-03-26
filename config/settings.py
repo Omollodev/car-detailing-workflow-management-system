@@ -287,6 +287,20 @@ REGISTRATION_SMS_ENABLED = os.getenv(
 AT_USERNAME = os.getenv('AT_USERNAME', '')
 AT_API_KEY = os.getenv('AT_API_KEY', '')
 
+# Customer notifications for payment and service completion events.
+PAYMENT_EMAIL_NOTIFICATIONS_ENABLED = os.getenv(
+    'PAYMENT_EMAIL_NOTIFICATIONS_ENABLED', 'True'
+).lower() in ('true', '1', 'yes')
+PAYMENT_SMS_NOTIFICATIONS_ENABLED = os.getenv(
+    'PAYMENT_SMS_NOTIFICATIONS_ENABLED', 'False'
+).lower() in ('true', '1', 'yes')
+SERVICE_EMAIL_NOTIFICATIONS_ENABLED = os.getenv(
+    'SERVICE_EMAIL_NOTIFICATIONS_ENABLED', 'True'
+).lower() in ('true', '1', 'yes')
+SERVICE_SMS_NOTIFICATIONS_ENABLED = os.getenv(
+    'SERVICE_SMS_NOTIFICATIONS_ENABLED', 'False'
+).lower() in ('true', '1', 'yes')
+
 # M-Pesa Daraja — STK Push (Lipa na M-Pesa Online)
 MPESA_DARAJA_ENABLED = os.getenv(
     'MPESA_DARAJA_ENABLED', 'False'
@@ -370,10 +384,10 @@ LOGGING = {
 
 # Jazzmin (Admin UI) - clearer app differentiation
 JAZZMIN_SETTINGS = {
-    "site_title": "DetailFlow Admin",
-    "site_header": "DetailFlow",
-    "site_brand": "DetailFlow",
-    "welcome_sign": "Welcome to DetailFlow Administration",
+    "site_title": "Workflow Admin",
+    "site_header": "Workflow",
+    "site_brand": "Workflow",
+    "welcome_sign": "Welcome to Workflow Administration",
     "show_sidebar": True,
     "navigation_expanded": True,
     "order_with_respect_to": [

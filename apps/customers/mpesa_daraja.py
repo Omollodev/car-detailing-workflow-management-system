@@ -171,9 +171,18 @@ def stk_push(
             raise RuntimeError(
                 f"M-Pesa STK HTTP {e.code}: {err_body[:500] or e.reason}"
             ) from e
-        raise RuntimeError(
-            f"M-Pesa STK error: {err_json}"
-        ) from e
+        err_code = str(err_json.get("errorCode") or "")
+        err_msg = str(err_json.get("errorMessage") or "")
+        if e.code in (401, 403) or err_code == "404.001.03" or "Invalid Access Token" in err_msg:
+            env = getattr(settings, "MPESA_ENV", "sandbox") or "sandbox"
+            raise RuntimeError(
+                "M-Pesa auth failed (Invalid Access Token). "
+                f"Confirm MPESA_ENV={env} matches the consumer key/secret type "
+                "(sandbox keys for sandbox, production keys for production) and "
+                "regenerate credentials in the Safaricom portal if needed."
+            ) from e
+
+        raise RuntimeError(f"M-Pesa STK error: {err_json}") from e
 
 
 def parse_stk_callback_body(raw: bytes) -> dict[str, Any]:

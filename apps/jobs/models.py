@@ -9,6 +9,10 @@ from django.utils import timezone
 from decimal import Decimal
 import json
 
+from .customer_notify import (
+    notify_customer_payment,
+    notify_customer_services_completed,
+)
 
 class Job(models.Model):
     """
@@ -461,6 +465,8 @@ class Job(models.Model):
             return
         balance = max(self.total_price - self.amount_paid, Decimal('0.00'))
         applied = min(amount, balance)
+        if applied <= 0:
+            return
         self.amount_paid = self.amount_paid + applied
         if self.amount_paid >= self.total_price:
             self.payment_status = self.PaymentStatus.PAID
@@ -492,6 +498,7 @@ class Job(models.Model):
                 'updated_at',
             ]
         )
+        notify_customer_payment(self, applied, "M-Pesa")
 
     def apply_cash_payment(
         self,
@@ -510,6 +517,8 @@ class Job(models.Model):
             return
         balance = max(self.total_price - self.amount_paid, Decimal('0.00'))
         applied = min(amount, balance)
+        if applied <= 0:
+            return
         self.amount_paid = self.amount_paid + applied
         
         # Set payment status based on whether balance is fully covered
@@ -539,6 +548,7 @@ class Job(models.Model):
                 'updated_at',
             ]
         )
+        notify_customer_payment(self, applied, "cash")
 
     # ==================== Duration Methods ====================
     
@@ -700,6 +710,10 @@ class JobService(models.Model):
             user=user
         )
         self.job.save(update_fields=['timeline'])
+
+        # Notify customer once all services on the job are done.
+        if not self.job.has_pending_services():
+            notify_customer_services_completed(self.job)
     
     def mark_incomplete(self, user=None):
         """Mark this service as incomplete (undo completion)."""

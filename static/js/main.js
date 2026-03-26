@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initKanban();
     initToasts();
     initConfirmDialogs();
+    initMobileKeyboardScrollFix();
     initStaffNotificationPoll();
 });
 
@@ -32,6 +33,26 @@ function initSidebar() {
             }
         });
     }
+}
+
+// On mobile, the virtual keyboard can cover the focused input.
+// Scrolling the focused element into view keeps forms usable.
+function initMobileKeyboardScrollFix() {
+    const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+    if (!isMobile) return;
+
+    const focusable = document.querySelectorAll('input, textarea, select');
+    focusable.forEach(el => {
+        el.addEventListener('focus', function () {
+            setTimeout(() => {
+                try {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } catch (e) {
+                    // no-op (some browsers may not support smooth scroll in this context)
+                }
+            }, 150);
+        });
+    });
 }
 
 // Kanban Drag and Drop

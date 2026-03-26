@@ -143,16 +143,43 @@ coverage run manage.py test
 coverage report
 ```
 
-## Production Deployment
+## Railway Deployment
 
-1. Set `DEBUG=False` in environment
-2. Configure proper `SECRET_KEY`
-3. Set up PostgreSQL database
-4. Configure Redis for caching
-5. Set up Celery for async tasks
-6. Configure Nginx as reverse proxy
-7. Use Gunicorn as WSGI server
-8. Set up SSL certificate
+This project is configured for Railway with `railway.json`.
+
+### Required Service Variables
+
+Set these in Railway Variables for your web service:
+
+```bash
+DATABASE_PUBLIC_URL="postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_TCP_PROXY_DOMAIN}}:${{RAILWAY_TCP_PROXY_PORT}}/${{PGDATABASE}}"
+DATABASE_URL="postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}"
+PGDATA="/var/lib/postgresql/data/pgdata"
+PGDATABASE="${{POSTGRES_DB}}"
+PGHOST="${{RAILWAY_PRIVATE_DOMAIN}}"
+PGPASSWORD="${{POSTGRES_PASSWORD}}"
+PGPORT="5432"
+PGUSER="${{POSTGRES_USER}}"
+POSTGRES_DB="railway"
+POSTGRES_USER="postgres"
+RAILWAY_DEPLOYMENT_DRAINING_SECONDS="60"
+SSL_CERT_DAYS="820"
+```
+
+Set your secrets separately in Railway (do not hardcode in git), including:
+
+```bash
+POSTGRES_PASSWORD="<your-secret-password>"
+DJANGO_SECRET_KEY="<your-django-secret-key>"
+DEBUG="False"
+```
+
+### Deploy flow
+
+1. Link repo to Railway project
+2. Provision PostgreSQL service
+3. Add the variables above
+4. Deploy (Railway runs `collectstatic`, then `migrate`, then starts Gunicorn)
 
 ## Support
 

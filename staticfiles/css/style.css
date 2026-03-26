@@ -621,19 +621,32 @@ thead.table-light th {
 
 /* Dropdown */
 .dropdown-menu {
-    background: rgba(10, 20, 28, 0.98);
+    background-color: rgba(10, 20, 28, 0.98) !important;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0.75rem;
-}
-
-.dropdown-item {
     color: var(--text-secondary);
 }
 
+.dropdown-item {
+    color: var(--text-secondary) !important;
+}
+
 .dropdown-item:hover {
-    background: rgba(31, 127, 154, 0.2);
-    color: #ffffff;
+    background-color: rgba(31, 127, 154, 0.2) !important;
+    color: #ffffff !important;
+}
+
+/* Extra Service dropdown highlight */
+.extra-services-field {
+    border: 2px solid orange !important;
+    background: rgba(255, 255, 255, 0.10) !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18) !important;
+}
+
+.extra-services-field:focus {
+    border-color: orange !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.26) !important;
 }
 
 /* Notifications */
@@ -814,6 +827,22 @@ thead.table-light th {
     
     .worker-form .skill-checkbox-item label {
         font-size: 0.85rem;
+    }
+
+    /* Avoid the mobile keyboard covering the focused field */
+    #app-main {
+        padding-bottom: 160px;
+    }
+
+    /* Organize Kanban columns vertically on mobile */
+    .kanban-board {
+        flex-direction: column;
+        overflow-x: visible;
+    }
+
+    .kanban-column {
+        flex: 1 1 auto;
+        min-width: 0;
     }
 }
 

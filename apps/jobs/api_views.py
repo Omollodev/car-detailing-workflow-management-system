@@ -50,6 +50,7 @@ def dashboard_jobs_api(request):
     """
     Return jobs for dashboard Kanban view.
     """
+    today = timezone.now().date()
     status = request.GET.get('status')
     
     jobs_qs = Job.objects.select_related(
@@ -58,10 +59,21 @@ def dashboard_jobs_api(request):
     
     if status:
         jobs_qs = jobs_qs.filter(status=status)
+        if status == Job.Status.COMPLETED:
+            jobs_qs = jobs_qs.filter(completed_at__date=today)
     else:
         jobs_qs = jobs_qs.exclude(status__in=['completed', 'cancelled'])
-    
-    jobs_qs = jobs_qs.order_by('priority', 'created_at')[:50]
+
+    # Keep ordering consistent with `apps/dashboard/views.py` so the UI
+    # refresh matches what the user initially sees.
+    if status == Job.Status.IN_PROGRESS:
+        jobs_qs = jobs_qs.order_by('priority', 'started_at')
+    elif status == Job.Status.COMPLETED:
+        jobs_qs = jobs_qs.order_by('-completed_at')
+    else:
+        jobs_qs = jobs_qs.order_by('priority', 'created_at')
+
+    jobs_qs = jobs_qs[:10]
     
     jobs_data = []
     for job in jobs_qs:

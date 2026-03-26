@@ -294,7 +294,8 @@ class AddExtraServiceForm(forms.Form):
             ],
         ),
         widget=forms.Select(attrs={
-            'class': 'form-select',
+            # Highlight this specific dropdown so it stands out visually.
+            'class': 'form-select extra-services-field',
         }),
         label='Extra Service'
     )

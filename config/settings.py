@@ -99,8 +99,12 @@ ASGI_APPLICATION = 'config.asgi.application'
 
 # Use DATABASE_URL when valid, otherwise fall back to local sqlite.
 # Database configuration
-# Use DATABASE_URL when valid, otherwise fall back to local sqlite.
-database_url = (os.getenv('DATABASE_URL') or '').strip()
+# Railway/production: prefer private DATABASE_URL, then public proxy URL.
+database_url = (
+    os.getenv('DATABASE_URL')
+    or os.getenv('DATABASE_PUBLIC_URL')
+    or ''
+).strip()
 
 # In production, we MUST have a valid DATABASE_URL
 if database_url and database_url != '://':
@@ -123,7 +127,7 @@ if database_url and database_url != '://':
             }
         else:
             # In production, fail loudly
-            raise Exception(f"Invalid DATABASE_URL configuration: {e}")
+            raise Exception(f"Invalid DATABASE_URL/DATABASE_PUBLIC_URL configuration: {e}")
 else:
     if DEBUG:
         DATABASES = {
@@ -133,7 +137,9 @@ else:
             }
         }
     else:
-        raise Exception("DATABASE_URL environment variable is required in production")
+        raise Exception(
+            "DATABASE_URL (or DATABASE_PUBLIC_URL) environment variable is required in production"
+        )
 
 
 

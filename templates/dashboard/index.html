@@ -119,7 +119,7 @@
                 <span><i class="bi bi-hourglass-split me-2"></i>Waiting</span>
                 <span class="badge bg-white text-secondary" id="count-waiting">{{ waiting_jobs|length }}</span>
             </div>
-            <div class="card-body p-2 kanban-column" id="column-waiting" style="max-height: 500px; overflow-y: auto;">
+            <div class="card-body p-2 kanban-column" id="column-waiting" data-status="waiting" style="max-height: 500px; overflow-y: auto;">
                 {% for job in waiting_jobs %}
                 {% include "jobs/_job_card.html" %}
                 {% empty %}
@@ -136,7 +136,7 @@
                 <span><i class="bi bi-play-circle me-2"></i>In Progress</span>
                 <span class="badge bg-white text-primary" id="count-in-progress">{{ in_progress_jobs|length }}</span>
             </div>
-            <div class="card-body p-2 kanban-column" id="column-in-progress" style="max-height: 500px; overflow-y: auto;">
+            <div class="card-body p-2 kanban-column" id="column-in-progress" data-status="in_progress" style="max-height: 500px; overflow-y: auto;">
                 {% for job in in_progress_jobs %}
                 {% include "jobs/_job_card.html" %}
                 {% empty %}
@@ -153,7 +153,7 @@
                 <span><i class="bi bi-exclamation-triangle me-2"></i>Awaiting Extra</span>
                 <span class="badge bg-dark" id="count-awaiting"> {{ awaiting_extra_jobs|length }}</span>
             </div>
-            <div class="card-body p-2 kanban-column" id="column-awaiting" style="max-height: 500px; overflow-y: auto;">
+            <div class="card-body p-2 kanban-column" id="column-awaiting" data-status="awaiting_extra" style="max-height: 500px; overflow-y: auto;">
                 {% for job in awaiting_extra_jobs %}
                 {% include "jobs/_job_card.html" %}
                 {% empty %}
@@ -170,7 +170,7 @@
                 <span><i class="bi bi-check-circle me-2"></i>Completed Today</span>
                 <span class="badge bg-white text-success" id="count-completed"> {{ completed_jobs|length }}</span>
             </div>
-            <div class="card-body p-2 kanban-column" id="column-completed" style="max-height: 500px; overflow-y: auto;">
+            <div class="card-body p-2 kanban-column" id="column-completed" data-status="completed" style="max-height: 500px; overflow-y: auto;">
                 {% for job in completed_jobs %}
                 {% include "jobs/_job_card.html" %}
                 {% empty %}
@@ -251,7 +251,106 @@ function refreshDashboard() {
         .catch(error => console.error('Error refreshing dashboard:', error));
 }
 
-// Start polling
-setInterval(refreshDashboard, POLLING_INTERVAL);
+function _escapeHtml(unsafe) {
+    if (unsafe === null || unsafe === undefined) return '';
+    return String(unsafe).replace(/[&<>"']/g, function (m) {
+        switch (m) {
+            case '&': return '&amp;';
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '"': return '&quot;';
+            case '\'': return '&#039;';
+            default: return m;
+        }
+    });
+}
+
+function _truncate(str, maxLen) {
+    const s = String(str || '');
+    if (s.length <= maxLen) return s;
+    return s.slice(0, maxLen - 1) + '…';
+}
+
+function _renderJobCard(job) {
+    const needAlert = !!job.need_alert;
+    const priorityBadgeClass = job.priority_badge_class || '';
+    const priorityDisplay = job.priority_display || '';
+    const queueNumber = job.queue_number || job.id || '';
+
+    const customerName = _truncate(job.customer_name, 15);
+    const vehicleDesc = job.vehicle_description || '';
+    const assignedWorker = job.worker_name || '';
+    const estimatedDuration = job.estimated_duration || '';
+    const formattedPrice = job.formatted_price || job.total_price || '';
+
+    return (
+            '<div class="card mb-2 job-card ' + (needAlert ? 'border-danger' : '') + '" ' +
+            'data-job-id="' + job.id + '">' +
+            '<div class="card-body p-3">' +
+                '<div class="d-flex justify-content-between align-items-start mb-2">' +
+                    '<div>' +
+                        '<span class="badge ' + priorityBadgeClass + ' me-1">' + _escapeHtml(priorityDisplay) + '</span>' +
+                        (needAlert ? '<span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> Alert</span>' : '') +
+                    '</div>' +
+                    '<small class="text-muted">#' + _escapeHtml(queueNumber) + '</small>' +
+                '</div>' +
+                '<h6 class="card-title mb-1">' +
+                    '<i class="bi bi-car-front me-1"></i>' +
+                    _escapeHtml(job.vehicle_plate || '') +
+                '</h6>' +
+                '<p class="card-text small text-muted mb-2">' +
+                    _escapeHtml(vehicleDesc) +
+                '</p>' +
+                '<div class="d-flex justify-content-between align-items-center mb-2">' +
+                    '<small><i class="bi bi-person me-1"></i>' + _escapeHtml(customerName) + '</small>' +
+                    '<small class="text-muted"><i class="bi bi-clock me-1"></i>' + _escapeHtml(estimatedDuration) + '</small>' +
+                '</div>' +
+                (assignedWorker ? ('<div class="mb-2"><small class="text-primary"><i class="bi bi-person-badge me-1"></i>' + _escapeHtml(assignedWorker) + '</small></div>') : '') +
+                '<div class="d-flex justify-content-between align-items-center">' +
+                    '<strong class="text-success">' + _escapeHtml(formattedPrice) + '</strong>' +
+                    '<a href="/jobs/' + _escapeHtml(job.id) + '/" class="btn btn-sm btn-outline-primary">View <i class="bi bi-arrow-right"></i></a>' +
+                '</div>' +
+            '</div>' +
+        '</div>'
+    );
+}
+
+function refreshKanban() {
+    const columns = [
+        { status: 'waiting', columnId: 'column-waiting', countId: 'count-waiting', emptyText: 'No waiting jobs' },
+        { status: 'in_progress', columnId: 'column-in-progress', countId: 'count-in-progress', emptyText: 'No jobs in progress' },
+        { status: 'awaiting_extra', columnId: 'column-awaiting', countId: 'count-awaiting', emptyText: 'No jobs awaiting extras' },
+        { status: 'completed', columnId: 'column-completed', countId: 'count-completed', emptyText: 'No completed jobs today' },
+    ];
+
+    columns.forEach(({ status, columnId, countId, emptyText }) => {
+        fetch(`/api/dashboard/jobs/?status=${encodeURIComponent(status)}`, { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(data => {
+                const jobs = data.jobs || [];
+                const columnEl = document.getElementById(columnId);
+                const countEl = document.getElementById(countId);
+                if (!columnEl) return;
+
+                if (jobs.length === 0) {
+                    columnEl.innerHTML = '<p class="text-center text-muted py-4">' + _escapeHtml(emptyText) + '</p>';
+                } else {
+                    columnEl.innerHTML = jobs.map(_renderJobCard).join('');
+                }
+                if (countEl) countEl.textContent = String(jobs.length);
+            })
+            .catch(err => {
+                // Keep the existing board on errors
+                console.error('Error refreshing kanban column:', status, err);
+            });
+    });
+}
+
+// Start polling (stats + kanban)
+refreshKanban();
+setInterval(function () {
+    refreshDashboard();
+    refreshKanban();
+}, POLLING_INTERVAL);
 </script>
 {% endblock %}

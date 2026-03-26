@@ -42,6 +42,7 @@ CSRF_TRUSTED_ORIGINS = _parse_csv_env(
 # Application definition
 INSTALLED_APPS = [
     'daphne',
+    'channels',
     'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',

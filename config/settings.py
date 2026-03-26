@@ -27,7 +27,13 @@ def _parse_csv_env(name, default):
     This avoids runtime issues from accidental spaces or quoted entries.
     """
     raw_value = os.getenv(name, default)
-    return [item.strip().strip("'\"") for item in raw_value.split(',') if item.strip()]
+    # Normalize by removing whitespace/quotes and any trailing slashes.
+    # Django expects CSRF_TRUSTED_ORIGINS without a trailing "/" or path.
+    return [
+        item.strip().strip("'\"").rstrip('/')
+        for item in raw_value.split(',')
+        if item.strip()
+    ]
 
 
 ALLOWED_HOSTS = _parse_csv_env(
@@ -38,6 +44,20 @@ CSRF_TRUSTED_ORIGINS = _parse_csv_env(
     'CSRF_TRUSTED_ORIGINS',
     'https://localhost,https://127.0.0.1,https://car-detailing-workflow-management-system-production.up.railway.app'
 )
+
+# In production, requests will often come from the deployed host.
+# If the CSRF list is missing/incorrect, add explicit origins for ALLOWED_HOSTS.
+if not DEBUG:
+    csrf_set = set(CSRF_TRUSTED_ORIGINS)
+    for host in ALLOWED_HOSTS:
+        host = (host or '').strip()
+        if not host or host in ('localhost', '127.0.0.1'):
+            continue
+        if '://' in host or '/' in host:
+            continue
+        csrf_set.add(f'https://{host}')
+        csrf_set.add(f'http://{host}')
+    CSRF_TRUSTED_ORIGINS = list(csrf_set)
 
 # Application definition
 INSTALLED_APPS = [
@@ -68,6 +88,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -107,6 +128,27 @@ database_url = (
     or os.getenv('DATABASE_PUBLIC_URL')
     or ''
 ).strip()
+
+# If DATABASE_URL is missing/placeholder-like, construct it from PG* env vars.
+if not database_url or ('${{' in database_url) or ('}}' in database_url):
+    pg_user = (os.getenv('PGUSER') or os.getenv('POSTGRES_USER') or '').strip() or 'postgres'
+    pg_password = (os.getenv('PGPASSWORD') or os.getenv('POSTGRES_PASSWORD') or '').strip()
+    pg_host = (
+        os.getenv('PGHOST')
+        or os.getenv('RAILWAY_PRIVATE_DOMAIN')
+        or os.getenv('RAILWAY_TCP_PROXY_DOMAIN')
+        or ''
+    ).strip()
+    pg_port = (os.getenv('PGPORT') or '5432').strip()
+    pg_database = (
+        os.getenv('PGDATABASE')
+        or os.getenv('POSTGRES_DB')
+        or os.getenv('PGDATABASE')
+        or ''
+    ).strip() or 'railway'
+
+    if pg_password and pg_host:
+        database_url = f'postgresql://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}'
 
 # In production, we MUST have a valid DATABASE_URL
 if database_url and database_url != '://':

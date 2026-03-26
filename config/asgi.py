@@ -17,7 +17,9 @@ application = ProtocolTypeRouter({
     "http": django_asgi_app,
     "websocket": AuthMiddlewareStack(
         URLRouter(
-            # Add your WebSocket URL patterns here
+            # No websocket routes are defined in this project yet.
+            # Provide an empty list so Daphne can start cleanly.
+            []
         )
     ),
 })

@@ -8,7 +8,42 @@ document.addEventListener('DOMContentLoaded', function() {
     initConfirmDialogs();
     initMobileKeyboardScrollFix();
     initStaffNotificationPoll();
+    initThemeToggle();
 });
+
+const THEME_STORAGE_KEY = 'cds-theme';
+
+function initThemeToggle() {
+    const btn = document.getElementById('theme-toggle');
+    const icon = document.getElementById('theme-toggle-icon');
+    if (!btn || !icon) return;
+
+    function currentTheme() {
+        return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    }
+
+    function applyUi(theme) {
+        var isLight = theme === 'light';
+        icon.className = isLight ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
+        btn.setAttribute('aria-label', isLight ? 'Switch to dark theme' : 'Switch to light theme');
+        btn.setAttribute('title', isLight ? 'Dark theme' : 'Light theme');
+    }
+
+    applyUi(currentTheme());
+
+    btn.addEventListener('click', function () {
+        var next = currentTheme() === 'light' ? 'dark' : 'light';
+        if (next === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+        try {
+            localStorage.setItem(THEME_STORAGE_KEY, next);
+        } catch (e) { /* ignore */ }
+        applyUi(next);
+    });
+}
 
 // Sidebar Toggle (Mobile)
 function initSidebar() {

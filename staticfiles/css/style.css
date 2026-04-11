@@ -11,7 +11,7 @@
     --info: #3b82f6;
     --light: #f9fafb;
     --dark: #111827;
-    --body-bg: #021217;
+    --body-bg: #ffffff;
     --sidebar-bg: rgba(10, 20, 28, 0.95);
     --card-bg: rgba(255, 255, 255, 0.08);
     --card-border: rgba(255, 255, 255, 0.1);
@@ -890,6 +890,362 @@ thead.table-light th {
 
 .worker-form .worker-skills .form-check-label:hover {
     color: #ffffff;
+}
+
+/* --- Theme toggle (navbar) --- */
+.theme-toggle-btn {
+    cursor: pointer;
+    line-height: 1;
+    border-radius: 0.5rem;
+    transition: background 0.2s, color 0.2s;
+}
+
+.navbar-dark .theme-toggle-btn {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.navbar-dark .theme-toggle-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* --- Light theme --- */
+html[data-theme="light"] {
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-muted: #6b7280;
+    --card-bg: #ffffff;
+    --card-border: #e5e7eb;
+}
+
+html[data-theme="light"] body,
+html[data-theme="light"] {
+    background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+    color: var(--text-primary);
+}
+
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4,
+html[data-theme="light"] h5,
+html[data-theme="light"] h6 {
+    color: #111827;
+}
+
+html[data-theme="light"] p,
+html[data-theme="light"] span,
+html[data-theme="light"] label,
+html[data-theme="light"] small {
+    color: var(--text-secondary);
+}
+
+html[data-theme="light"] .text-muted {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme="light"] .auth-page {
+    background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+html[data-theme="light"] .auth-card {
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+    box-shadow: 0 10px 40px -10px rgba(15, 23, 42, 0.12);
+}
+
+html[data-theme="light"] .auth-title {
+    background: linear-gradient(135deg, #111827 0%, var(--primary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+html[data-theme="light"] .auth-subtitle {
+    color: var(--text-muted);
+}
+
+html[data-theme="light"] .auth-logo {
+    background: rgba(31, 127, 154, 0.08);
+}
+
+html[data-theme="light"] .form-label {
+    color: #374151;
+}
+
+html[data-theme="light"] .form-control,
+html[data-theme="light"] .form-select,
+html[data-theme="light"] textarea.form-control {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    color: #111827;
+}
+
+html[data-theme="light"] .form-control:focus,
+html[data-theme="light"] .form-select:focus {
+    background: #ffffff;
+    border-color: var(--primary);
+    color: #111827;
+}
+
+html[data-theme="light"] .form-control::placeholder {
+    color: rgba(55, 65, 81, 0.45);
+}
+
+html[data-theme="light"] .input-group-text {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    color: #374151;
+}
+
+html[data-theme="light"] .card {
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="light"] .card:hover {
+    box-shadow: 0 8px 24px -8px rgba(15, 23, 42, 0.1);
+}
+
+html[data-theme="light"] .card-header {
+    background: #f9fafb;
+    border-bottom: 1px solid var(--card-border);
+    color: #111827;
+}
+
+html[data-theme="light"] .card-title {
+    color: #111827;
+}
+
+html[data-theme="light"] .card-text {
+    color: var(--text-secondary);
+}
+
+html[data-theme="light"] .stat-card {
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+}
+
+html[data-theme="light"] .stat-card:hover {
+    background: #f9fafb;
+}
+
+html[data-theme="light"] .stat-value {
+    background: linear-gradient(135deg, #111827 0%, var(--primary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+html[data-theme="light"] .stat-label {
+    color: var(--text-muted);
+}
+
+html[data-theme="light"] .kanban-column {
+    background: #f9fafb;
+    border: 1px solid var(--card-border);
+}
+
+html[data-theme="light"] .kanban-title {
+    color: #111827;
+}
+
+html[data-theme="light"] .kanban-count {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+html[data-theme="light"] .job-card {
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+}
+
+html[data-theme="light"] .job-card:hover {
+    background: #f9fafb;
+}
+
+html[data-theme="light"] .job-card-body .customer-name {
+    color: #111827;
+}
+
+html[data-theme="light"] .job-card-footer {
+    border-top: 1px solid var(--card-border);
+}
+
+html[data-theme="light"] .job-number {
+    color: var(--primary);
+}
+
+html[data-theme="light"] .table {
+    color: #111827;
+    --bs-table-striped-bg: #f9fafb;
+    --bs-table-hover-bg: #f3f4f6;
+    --bs-table-border-color: #e5e7eb;
+}
+
+html[data-theme="light"] .table > :not(caption) > * > * {
+    color: #111827;
+}
+
+html[data-theme="light"] .table thead th {
+    background: #f3f4f6;
+    border-bottom: 1px solid #e5e7eb;
+    color: #4b5563;
+}
+
+html[data-theme="light"] .table tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+}
+
+html[data-theme="light"] .table tbody tr td {
+    color: #111827;
+}
+
+html[data-theme="light"] .table-light,
+html[data-theme="light"] .table-light > th,
+html[data-theme="light"] .table-light > td,
+html[data-theme="light"] thead.table-light th {
+    background: #f9fafb !important;
+    color: #374151 !important;
+    border-color: #e5e7eb !important;
+}
+
+html[data-theme="light"] .list-group-item {
+    background: #ffffff;
+    color: #111827;
+    border-color: #e5e7eb;
+}
+
+html[data-theme="light"] .bg-light {
+    background: #f3f4f6 !important;
+    color: #111827 !important;
+}
+
+html[data-theme="light"] footer.bg-light {
+    border-top: 1px solid #e5e7eb;
+}
+
+html[data-theme="light"] .badge.bg-secondary {
+    color: #ffffff;
+}
+
+html[data-theme="light"] .dropdown-menu {
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 40px -10px rgba(15, 23, 42, 0.15);
+    color: #374151;
+}
+
+html[data-theme="light"] .dropdown-item {
+    color: #374151 !important;
+}
+
+html[data-theme="light"] .dropdown-item:hover {
+    background-color: rgba(31, 127, 154, 0.08) !important;
+    color: #111827 !important;
+}
+
+html[data-theme="light"] .extra-services-field {
+    background: #fffbeb !important;
+    border-color: #f59e0b !important;
+}
+
+html[data-theme="light"] .alert {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    color: #111827;
+}
+
+html[data-theme="light"] .modal-content {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+}
+
+html[data-theme="light"] .modal-header,
+html[data-theme="light"] .modal-footer {
+    border-color: #e5e7eb;
+}
+
+html[data-theme="light"] .modal-title {
+    color: #111827;
+}
+
+html[data-theme="light"] .modal-body {
+    color: var(--text-secondary);
+}
+
+html[data-theme="light"] .spinner-overlay {
+    background: rgba(248, 250, 252, 0.92);
+}
+
+html[data-theme="light"] .worker-form .worker-skills-grid,
+html[data-theme="light"] .worker-form .worker-skills ul {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+}
+
+html[data-theme="light"] .worker-form .skill-checkbox-item label:hover,
+html[data-theme="light"] .worker-form .worker-skills .form-check-label:hover {
+    color: #111827;
+}
+
+html[data-theme="light"] ::-webkit-scrollbar-track {
+    background: #e5e7eb;
+}
+
+html[data-theme="light"] ::-webkit-scrollbar-thumb {
+    background: rgba(31, 127, 154, 0.45);
+}
+
+/* Navbar: keep Bootstrap structure; recolor for light background */
+html[data-theme="light"] nav.navbar.navbar-dark.bg-primary {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="light"] .navbar-dark .navbar-brand,
+html[data-theme="light"] .navbar-dark .nav-link {
+    color: #1f2937 !important;
+}
+
+html[data-theme="light"] .navbar-dark .nav-link:hover,
+html[data-theme="light"] .navbar-dark .navbar-brand:hover {
+    color: #111827 !important;
+}
+
+html[data-theme="light"] .navbar-dark .nav-link.active {
+    color: var(--primary) !important;
+}
+
+html[data-theme="light"] .navbar-dark .navbar-toggler {
+    border-color: rgba(31, 41, 55, 0.25);
+}
+
+html[data-theme="light"] .navbar-dark .navbar-toggler-icon {
+    filter: invert(1) brightness(0.35);
+}
+
+html[data-theme="light"] .theme-toggle-btn {
+    color: #374151 !important;
+}
+
+html[data-theme="light"] .theme-toggle-btn:hover {
+    color: #111827 !important;
+    background: rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="light"] .btn-secondary {
+    background: #e5e7eb;
+    border: 1px solid #d1d5db;
+    color: #111827;
+}
+
+html[data-theme="light"] .btn-secondary:hover {
+    background: #d1d5db;
+    border-color: #9ca3af;
+    color: #111827;
 }
 
 /* Print Styles */

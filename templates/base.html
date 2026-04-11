@@ -4,6 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('cds-theme') === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                }
+            } catch (e) { /* ignore */ }
+        })();
+    </script>
         <title>{% block title %}{{ BUSINESS_NAME|default:"Carwash Workflow Management System" }}{% endblock %}</title>
         
     <!-- Bootstrap 5 CSS -->
@@ -100,7 +109,12 @@
                 </ul>
                 {% endif %}
                 
-                <ul class="navbar-nav">
+                <ul class="navbar-nav align-items-lg-center">
+                    <li class="nav-item">
+                        <button type="button" class="btn nav-link py-2 theme-toggle-btn border-0" id="theme-toggle" aria-label="Switch to light theme" title="Light theme">
+                            <i class="bi bi-sun-fill" id="theme-toggle-icon" aria-hidden="true"></i>
+                        </button>
+                    </li>
                     {% if not user.is_customer %}
                     <!-- Notifications (staff) -->
                     <li class="nav-item dropdown">

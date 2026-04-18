@@ -10,8 +10,23 @@ app_name = 'accounts'
 urlpatterns = [
     # Authentication
     path('login/', views.login_view, name='login'),
+    path(
+        'verification-pending/',
+        views.verification_pending_view,
+        name='verification_pending',
+    ),
+    path(
+        'resend-verification/',
+        views.resend_verification_email_view,
+        name='resend_verification',
+    ),
     path('logout/', views.logout_view, name='logout'),
     path('register/customer/', views.customer_register_view, name='customer_register'),
+    path(
+        'verify-email/<uidb64>/<token>/',
+        views.verify_email_view,
+        name='verify_email',
+    ),
     
     # Profile
     path('profile/', views.profile_view, name='profile'),

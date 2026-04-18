@@ -104,7 +104,8 @@ class CustomerRegistrationForm(UserCreationForm):
         user.last_name = self.cleaned_data['last_name']
         user.phone = self.cleaned_data['phone']
         user.role = User.Role.CUSTOMER
-        user.is_active = True
+        # Customers become active only after verifying their email.
+        user.is_active = False
         if commit:
             user.save()
         return user

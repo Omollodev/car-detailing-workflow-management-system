@@ -8,6 +8,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
+from django.db import models
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.urls import reverse
 
 from apps.customers.models import Customer
 
@@ -21,6 +26,17 @@ from .forms import (
 from .decorators import admin_required
 from .models import User
 from .registration_notify import notify_customer_registered
+from .registration_notify import send_customer_verification_email
+
+
+def _build_customer_verification_url(request, user):
+    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    verification_path = reverse(
+        'accounts:verify_email',
+        kwargs={'uidb64': uidb64, 'token': token},
+    )
+    return request.build_absolute_uri(verification_path)
 
 
 def customer_register_view(request):
@@ -43,15 +59,17 @@ def customer_register_view(request):
                 phone=form.cleaned_data['phone'],
                 email=form.cleaned_data['email'],
             )
-            notify_customer_registered(
+
+            verification_url = _build_customer_verification_url(request, user)
+            send_customer_verification_email(
                 name=name or user.username,
                 email=form.cleaned_data['email'],
-                phone=form.cleaned_data['phone'],
-                username=user.username,
+                verification_url=verification_url,
             )
-            login(request, user)
-            messages.success(request, 'Welcome! Your customer account is ready.')
-            return redirect('customers:portal')
+
+            request.session['pending_verification_email'] = user.email
+            request.session['pending_verification_username'] = user.username
+            return redirect('accounts:verification_pending')
     else:
         form = CustomerRegistrationForm()
 
@@ -88,11 +106,103 @@ def login_view(request):
                 return redirect(next_url)
             return redirect('dashboard:index')
         else:
-            messages.error(request, 'Invalid username or password.')
+            username = (request.POST.get('username') or '').strip()
+            if username:
+                pending_user = User.objects.filter(
+                    username=username,
+                    role=User.Role.CUSTOMER,
+                    is_active=False,
+                ).first()
+                if pending_user:
+                    messages.warning(
+                        request,
+                        'Please verify your email before logging in.',
+                    )
+                else:
+                    messages.error(request, 'Invalid username or password.')
+            else:
+                messages.error(request, 'Invalid username or password.')
     else:
         form = LoginForm()
     
     return render(request, 'accounts/login.html', {'form': form})
+
+
+def verification_pending_view(request):
+    """
+    Inform newly-registered customers to verify their email address.
+    """
+    if request.user.is_authenticated:
+        if request.user.is_customer:
+            return redirect('customers:portal')
+        return redirect('dashboard:index')
+
+    context = {
+        'pending_email': request.session.get('pending_verification_email', ''),
+        'pending_username': request.session.get('pending_verification_username', ''),
+    }
+    return render(request, 'accounts/verification_pending.html', context)
+
+
+@require_http_methods(["POST"])
+def resend_verification_email_view(request):
+    """
+    Resend verification email for inactive customer accounts.
+    """
+    username = (request.POST.get('username') or '').strip()
+    email = (request.POST.get('email') or '').strip().lower()
+
+    # Keep response generic to avoid exposing whether an account exists.
+    generic_msg = 'If an unverified account exists, a verification email has been sent.'
+
+    if not username and not email:
+        messages.warning(request, 'Enter your username or email to resend verification.')
+        return redirect('accounts:login')
+
+    pending_user = User.objects.filter(
+        role=User.Role.CUSTOMER,
+        is_active=False,
+    ).filter(
+        models.Q(username=username) | models.Q(email=email)
+    ).first()
+
+    if pending_user:
+        verification_url = _build_customer_verification_url(request, pending_user)
+        send_customer_verification_email(
+            name=pending_user.get_full_name() or pending_user.username,
+            email=pending_user.email,
+            verification_url=verification_url,
+        )
+
+    messages.info(request, generic_msg)
+    return redirect('accounts:login')
+
+
+def verify_email_view(request, uidb64, token):
+    """
+    Verify customer email and activate account.
+    """
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid, role=User.Role.CUSTOMER)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user and default_token_generator.check_token(user, token):
+        if not user.is_active:
+            user.is_active = True
+            user.save(update_fields=['is_active'])
+            notify_customer_registered(
+                name=user.get_full_name() or user.username,
+                email=user.email,
+                phone=user.phone,
+                username=user.username,
+            )
+        messages.success(request, 'Email verified successfully. You can now sign in.')
+    else:
+        messages.error(request, 'Verification link is invalid or has expired.')
+
+    return redirect('accounts:login')
 
 
 @login_required

@@ -39,6 +39,30 @@ def send_customer_registration_email(*, name: str, email: str, username: str) ->
         logger.exception("Failed to send registration email to %s", email)
 
 
+def send_customer_verification_email(*, name: str, email: str, verification_url: str) -> None:
+    if not email:
+        return
+    subject = f"Verify your email — {settings.BUSINESS_NAME or 'Car Detailing'}"
+    body = (
+        f"Hi {name},\n\n"
+        "Thanks for registering. Please verify your email before logging in.\n\n"
+        f"Verify here: {verification_url}\n\n"
+        "If you did not create this account, please ignore this email.\n\n"
+        f"— {settings.BUSINESS_NAME or 'The team'}"
+    )
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None) or "noreply@localhost"
+    try:
+        send_mail(
+            subject,
+            body,
+            from_email,
+            [email],
+            fail_silently=False,
+        )
+    except Exception:
+        logger.exception("Failed to send verification email to %s", email)
+
+
 def _send_africastalking_sms(phone_e164: str, message: str) -> bool:
     username = getattr(settings, "AT_USERNAME", "") or ""
     api_key = getattr(settings, "AT_API_KEY", "") or ""

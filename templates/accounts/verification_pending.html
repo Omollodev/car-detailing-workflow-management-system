@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Check your email - Verification pending{% endblock %}
+
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<div class="auth-page d-flex align-items-center justify-content-center py-4">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-11 col-sm-10 col-md-8 col-lg-7">
+                <div class="card auth-card">
+                    <div class="card-body text-center px-3 px-sm-4 py-4">
+                        <img src="{% static 'imgs/carwash.png' %}" alt="Car Detailing System" class="auth-logo mb-3">
+                        <h1 class="auth-title mb-2">Check Your Email</h1>
+                        {% if pending_email %}
+                        <p class="auth-subtitle mb-2">
+                            We sent a verification link to <strong>{{ pending_email }}</strong>.
+                        </p>
+                        {% else %}
+                        <p class="auth-subtitle mb-2">
+                            We sent you a verification link.
+                        </p>
+                        {% endif %}
+                        <p class="text-muted mb-4">Please open the email and click the link to activate your account.</p>
+
+                        <button
+                            type="button"
+                            class="btn btn-link w-100 p-0 text-decoration-none mb-2"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#resendVerificationBox"
+                            aria-expanded="false"
+                            aria-controls="resendVerificationBox"
+                        >
+                            Didn't receive the email? Resend verification
+                        </button>
+                        <div class="collapse mt-2 mb-2" id="resendVerificationBox">
+                            <div class="border rounded p-3 bg-light-subtle text-start">
+                                <p class="small text-muted mb-2">
+                                    If your verification link expired, request a fresh email.
+                                </p>
+                                <form method="post" action="{% url 'accounts:resend_verification' %}">
+                                    {% csrf_token %}
+                                    <div class="mb-2">
+                                        <label for="id_resend_username" class="form-label small mb-1">Username</label>
+                                        <input
+                                            id="id_resend_username"
+                                            name="username"
+                                            type="text"
+                                            class="form-control form-control-sm"
+                                            placeholder="Enter your username"
+                                            value="{{ pending_username }}"
+                                        >
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="id_resend_email" class="form-label small mb-1">Email</label>
+                                        <input
+                                            id="id_resend_email"
+                                            name="email"
+                                            type="email"
+                                            class="form-control form-control-sm"
+                                            placeholder="you@example.com"
+                                            value="{{ pending_email }}"
+                                        >
+                                    </div>
+                                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+                                        Send new verification link
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <a href="{% url 'accounts:login' %}" class="btn btn-link text-decoration-none">
+                            Return to login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

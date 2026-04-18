@@ -7,8 +7,18 @@
     <script>
         (function () {
             try {
+                const navbar = document.querySelector('nav.navbar');
                 if (localStorage.getItem('cds-theme') === 'light') {
                     document.documentElement.setAttribute('data-theme', 'light');
+                    if (navbar) {
+                        navbar.classList.remove('navbar-dark', 'bg-primary');
+                        navbar.classList.add('navbar-light', 'bg-light');
+                    }
+                } else {
+                    if (navbar) {
+                        navbar.classList.remove('navbar-light', 'bg-light');
+                        navbar.classList.add('navbar-dark', 'bg-primary');
+                    }
                 }
             } catch (e) { /* ignore */ }
         })();

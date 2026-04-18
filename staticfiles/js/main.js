@@ -16,6 +16,7 @@ const THEME_STORAGE_KEY = 'cds-theme';
 function initThemeToggle() {
     const btn = document.getElementById('theme-toggle');
     const icon = document.getElementById('theme-toggle-icon');
+    const navbar = document.querySelector('nav.navbar');
     if (!btn || !icon) return;
 
     function currentTheme() {
@@ -27,6 +28,17 @@ function initThemeToggle() {
         icon.className = isLight ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
         btn.setAttribute('aria-label', isLight ? 'Switch to dark theme' : 'Switch to light theme');
         btn.setAttribute('title', isLight ? 'Dark theme' : 'Light theme');
+        
+        // Update navbar classes for theme
+        if (navbar) {
+            if (isLight) {
+                navbar.classList.remove('navbar-dark', 'bg-primary');
+                navbar.classList.add('navbar-light', 'bg-light');
+            } else {
+                navbar.classList.remove('navbar-light', 'bg-light');
+                navbar.classList.add('navbar-dark', 'bg-primary');
+            }
+        }
     }
 
     applyUi(currentTheme());
